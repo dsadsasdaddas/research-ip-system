@@ -1,0 +1,22 @@
+# 用 Docker 跑一个 MySQL 数据库,免去本地安装的麻烦。
+# 启动: docker compose up -d   (-d = 后台运行)
+# 查看: docker compose ps
+# 停止: docker compose down     (容器删除,但数据保留在下面的 mysql-data 卷里)
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: homeworl-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root1234     # 本地开发用的密码;后端连库时也用它(写进 .env,不进 git)
+      MYSQL_DATABASE: research_db        # 容器第一次启动时自动创建我们的数据库
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"                      # 本机 3306 端口 -> 容器里的 3306,后端就是连本机 3306
+    volumes:
+      - mysql-data:/var/lib/mysql        # 数据存到命名卷里,容器删了数据也不丢
+    # 设置 utf8mb4,保证中文(论文标题、摘要等)不乱码
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+volumes:
+  mysql-data:
