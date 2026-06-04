@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>科研成果与知识产权管理系统需求规格说明书</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", SimSun, sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.8;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 26px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+            font-size: 22px;
+            margin: 35px 0 15px;
+        }
+        h3 {
+            color: #34495e;
+            font-size: 18px;
+            margin: 25px 0 12px;
+        }
+        h4 {
+            font-size: 16px;
+            margin: 18px 0 8px;
+            color: #444;
+        }
+        p {
+            margin: 10px 0;
+            font-size: 15px;
+        }
+        ul, ol {
+            margin: 10px 0 10px 25px;
+        }
+        li {
+            margin: 6px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        table th {
+            background-color: #f0f6fc;
+            font-weight: bold;
+        }
+        .tip {
+            background: #ecf7ff;
+            padding: 12px 15px;
+            border-left: 4px solid #3498db;
+            margin: 15px 0;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            table th, table td {
+                padding: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>科研成果与知识产权管理系统需求规格说明书</h1>
+
+
+        <h2>1. 项目背景与目标</h2>
+        <h3>1.1 项目背景</h3>
+        <p>研究院日常统筹管理<strong>论文、专利、软件著作权</strong>等各类科研成果及知识产权，业务覆盖成果登记、费用缴纳、转化落地、数据统计、各类申报提醒全流程。目前主要依靠人工Excel台账管理，存在成果信息易遗漏、专利/软著缴费逾期风险高、全院成果底数不清、数据汇总耗时、跨系统数据重复录入等问题，整体管理效率偏低，无法满足数字化、规范化、智能化管控要求。</p>
+        <p>同时院内已部署人员管理、财务、文献库等业务系统，各系统数据相互独立，形成数据孤岛，亟需打通数据链路。</p>
+
+        <h3>1.2 总体目标</h3>
+        <p>搭建<strong>科研成果与知识产权一体化全生命周期管理系统</strong>，实现成果从登记、审核、缴费、维护、转化、统计到注销的闭环管理；依托自动化接口减少人工录入，配置多级预警机制规避逾期风险；提供多维度数据看板支撑管理决策；完成与院内现有业务系统对接，全面提升知识产权管理规范化、智能化水平。</p>
+
+        <h3>1.3 细分管理目标</h3>
+        <ol>
+            <li>合规管控：落实知识产权保密要求、操作留痕、档案规范化归档，满足内控与审计要求；</li>
+            <li>风险防控：通过多级预警杜绝年费、申报事项逾期问题；</li>
+            <li>数据贯通：打通人员、财务、文献库等现有数据源，实现数据一次录入、多方复用；</li>
+            <li>分级管控：针对普通成果、涉密成果、合作成果设置差异化管理规则。</li>
+        </ol>
+
+        <h3>1.4 分阶段建设目标</h3>
+        <h4>一期（基础刚需版）</h4>
+        <p>实现核心成果登记、审批、费用台账、基础预警、通用检索、基础统计看板、基础权限与核心API对接，解决人工台账、缴费逾期、基础统计三大痛点。</p>
+        <h4>二期（全流程深化版）</h4>
+        <p>完善成果转化全链路、费用线上审批、自定义报表、高级检索、移动端应用、第三方系统深度对接、大数据量性能优化、运维监控能力，实现全业务线上化。</p>
+
+        <h3>1.5 数据源对接边界</h3>
+        <p>对接院内<strong>统一身份/HR系统、财务系统、文献库</strong>，采用增量同步/实时调用结合模式，明确数据单向/双向流转规则，不修改原有系统底层数据。</p>
+
+        <h2>2. 用户角色</h2>
+        <p>结合研究院多层级组织架构，扩充角色体系，<strong>明确各角色职责、数据访问范围、权限隔离规则</strong>，整体采用RBAC权限模型+部门数据隔离机制。</p>
+        <table>
+            <tr>
+                <th>角色</th>
+                <th>主要职责</th>
+                <th>数据访问与权限边界</th>
+            </tr>
+            <tr>
+                <td>科研人员</td>
+                <td>登记个人成果、维护本人成果信息、查看个人成果统计、接收各类提醒、确认提醒回执</td>
+                <td>仅查看/操作<strong>本人名下</strong>成果，可上传本人成果附件；不可查看其他人员、其他部门数据</td>
+            </tr>
+            <tr>
+                <td>科研秘书（部门级）</td>
+                <td>审核本部门成果、管理部门知识产权费用、跟踪成果转化、导出部门报表、发起本部门缴费/申报事项</td>
+                <td>仅管辖<strong>所属部门</strong>数据，可操作本部门全部成果、费用、转化信息；无全院数据查看权限</td>
+            </tr>
+            <tr>
+                <td>部门管理员</td>
+                <td>协助部门秘书管理本部门人员权限、维护部门基础数据、配合内审核查资料</td>
+                <td>部门数据只读为主，仅拥有基础配置权限，无跨部门操作权限</td>
+            </tr>
+            <tr>
+                <td>主管/院领导</td>
+                <td>查看全院成果统计看板、趋势分析、转化效益分析、全局数据汇总，支撑管理决策</td>
+                <td>可查看全院汇总数据、各部门排行数据；可按权限查看重点成果详情，支持数据下钻</td>
+            </tr>
+            <tr>
+                <td>涉密成果管理员</td>
+                <td>专项管理国防专利、涉密论文/软著，管控涉密数据访问、附件加密与流转</td>
+                <td>仅负责涉密成果全流程管理，涉密数据单独权限隔离</td>
+            </tr>
+            <tr>
+                <td>内审/审计人员</td>
+                <td>查阅操作日志、成果台账、费用凭证、审批记录，开展合规审计</td>
+                <td>数据只读，仅可查询归档数据与日志，无新增、修改、删除权限</td>
+            </tr>
+            <tr>
+                <td>系统管理员</td>
+                <td>全局权限配置、数据字典维护、提醒规则配置、外部接口配置、系统运维、日志核查、数据备份管理</td>
+                <td>拥有系统最高配置权限；可管控全系统功能、接口、安全策略，禁止随意篡改业务数据</td>
+            </tr>
+        </table>
+
+        <h2>3. 功能需求</h2>
+        <h3>3.1 成果登记模块</h3>
+        <p>支持<strong>论文、专利、软件著作权</strong>三类成果统一登记、审核、归档，支持合作成果、涉密成果差异化管理，内置智能录入、唯一性校验、全流程审计、附件管控能力。</p>
+
+        <h4>3.1.1 论文登记</h4>
+        <p><strong>基础字段</strong>：标题、作者列表（区分第一作者/通讯作者）、<strong>院内作者/外单位合作作者、合作单位</strong>、所属部门、期刊名称、ISSN/CN、卷期页码、发表年份、DOI、收录情况（SCI/EI/CSCD等）、影响因子、中科院分区、成果状态（在线发表/正式出版）、摘要。</p>
+        <p><strong>扩展字段</strong>：成果密级（公开/内部/涉密）、课题依托项目。</p>
+        <p><strong>附件</strong>：论文PDF原文、录用通知、检索证明，支持<strong>附件版本管理、在线预览、加密存储、下载权限校验</strong>。</p>
+        <ul>
+            <li>智能录入：支持通过DOI自动补全大部分字段，预留学生成果专项录入接口；</li>
+            <li>唯一性校验：同一DOI仅允许登记一条数据，重复提交自动拦截并提示；</li>
+            <li>涉密管控：涉密论文标记后，仅涉密管理员与授权人员可查看、下载附件。</li>
+        </ul>
+
+        <h4>3.1.2 专利登记</h4>
+        <p><strong>基础字段</strong>：专利名称、发明人（区分院内/外单位发明人）、专利权人、申请号、授权号、申请日、授权日、专利类型（发明/实用新型/外观设计/PCT）、国别、年费下次缴费日、年费金额、代理机构、法律状态（申请中/授权/失效/驳回）。</p>
+        <p><strong>扩展字段</strong>：PCT国际阶段、国家阶段、国际进入日期、<strong>专利标识（普通专利/国防专利/涉密专利）</strong>、课题依托项目、经费来源。</p>
+        <p><strong>附件</strong>：专利证书、缴费凭证、审查文件，附件支持权限管控与版本留存。</p>
+        <ul>
+            <li>状态同步：预留接口，支持通过申请号自动从官方渠道获取最新法律状态、缴费节点；</li>
+            <li>状态联动：专利状态变更后，自动同步至费用管理、预警提醒模块。</li>
+        </ul>
+
+        <h4>3.1.3 软著登记</h4>
+        <p><strong>基础字段</strong>：软著名称、著作权人、登记号、首次发表日期、登记日期、版本号、软件类别。</p>
+        <p><strong>扩展字段</strong>：软件功能简介、运行环境、合作单位、成果密级、依托项目。</p>
+        <p><strong>附件</strong>：软著登记证书、源代码材料、说明文档，支持附件权限管控。</p>
+
+        <h4>3.1.4 通用功能</h4>
+        <p><strong>1. 可配置审批流程</strong><br>基础流程：科研人员提交 → 部门科研秘书初审 → 系统管理员归档；<br>扩展规则：支持按<strong>成果类型、成果等级、涉密属性</strong>配置差异化流程，高价值专利、涉密成果可增加院领导加签、会签环节；支持流程节点增删、审批人灵活调整。</p>
+        <p><strong>2. 全量审计日志</strong><br>对成果信息新增、修改、删除、状态变更、附件上传/下载等操作，强制记录操作人、操作时间、登录IP、变更前后完整内容，日志不可删除。</p>
+        <p><strong>3. 成果注销/作废</strong><br>支持对失效、撤回、作废成果进行状态标记，留存作废原因、操作记录，历史数据永久归档。</p>
+
+        <h3>3.2 成果转化跟踪</h3>
+        <p>覆盖技术转让、许可使用、作价入股三大转化模式，完善细分类型、异常流程、效益台账，实现转化全生命周期跟踪。</p>
+        <ul>
+            <li><strong>转化类型细分</strong>：许可使用进一步区分：独占许可、排他许可、普通许可。</li>
+            <li><strong>核心记录字段</strong>：合同编号、交易对方、合同金额、已到账金额、转化日期、转化收益分配比例（院内/团队/个人）、<strong>收益分配台账、分配凭证、实际发放记录</strong>、依托成果编号。</li>
+            <li><strong>节点跟踪</strong>：标准节点：合同签订 → 收款 → 开票 → 完成；支持用户自定义业务节点；新增合同中止、转化失败、合同作废状态，必填异常原因、佐证材料、操作记录。</li>
+            <li><strong>效益跟踪</strong>：转化完成后，系统自动在3/6/12个月推送提醒，要求填报后续效益数据（新增产值、利润、行业影响等）；效益指标支持自定义配置。</li>
+            <li><strong>转化漏斗统计</strong>：自动统计各阶段成果数量、流转转化率，可视化展示转化整体情况。</li>
+        </ul>
+
+        <h3>3.3 知识产权费用管理</h3>
+        <p>关联专利、软著全类费用，完善经费分类、线上审批、批量操作、多级催办，实现费用台账、缴费、审批、预警闭环。</p>
+        <ul>
+            <li><strong>费用台账</strong>：关联对应专利/软著主体，记录：费用类型（申请费、年费、代理费、维持费、复审费等）、<strong>经费来源（院内经费/纵向课题/横向课题/外协资助）</strong>、金额、缴费日期、截止日期、凭证编号、缴费状态。</li>
+            <li><strong>缴费计划</strong>：支持单次缴费、周期性年费自动生成待缴计划，计划可手动编辑、暂停。</li>
+            <li><strong>线上缴费审批流程</strong>：缴费申请提交 → 部门审核 → 财务审批 → 费用支付 → 凭证归档，每一步留存审批意见与操作日志。</li>
+            <li><strong>预警与催办</strong>：保留四级预警：提前30天/15天/7天预警、逾期预警；补充逾期二次催办：首次预警未处理，系统自动追加提醒并告知部门负责人。</li>
+            <li><strong>批量操作与追溯</strong>：支持批量生成缴费单、批量标记缴费完成；提供历史欠费追溯查询功能。</li>
+            <li><strong>费用统计</strong>：按部门、年份、专利类型、经费来源多维度汇总费用支出。</li>
+        </ul>
+
+        <h3>3.4 成果统计分析</h3>
+        <p>保留标准可视化看板，新增自定义报表、权限隔离、定时推送、指标维度界定，满足个性化统计与常态化报送需求。</p>
+        <p><strong>标准看板（可视化展示）</strong></p>
+        <ul>
+            <li>年度成果数量趋势（折线图）</li>
+            <li>成果类型分布（饼图）</li>
+            <li>部门成果排行（柱状图）</li>
+            <li>专利有效/失效占比</li>
+            <li>转化合同金额与到账金额对比</li>
+            <li>转化漏斗转化率</li>
+        </ul>
+        <p><strong>引文分析</strong>：统计维度明确区分：<strong>个人、部门、全院</strong>三级；指标包含论文总被引次数、H指数、篇均引用（依赖外部API定期同步）。</p>
+        <p><strong>报表能力增强</strong></p>
+        <ul>
+            <li>支持<strong>自定义报表、多维度交叉筛选</strong>，用户可自由组合统计条件、展示字段；</li>
+            <li>报表权限隔离：区分个人报表、部门报表、全院报表，按角色分配查看权限；</li>
+            <li>定时报表推送：支持按月/季/年自动生成报表，通过站内信、邮件推送至指定人员。</li>
+        </ul>
+        <p><strong>导出功能</strong>：所有报表、看板支持导出Excel、PDF格式（含完整图表）。</p>
+
+        <h3>3.5 申报提醒</h3>
+        <p>完善提醒等级、模板、批量创建、二次催办，构建闭环提醒机制。</p>
+        <ul>
+            <li><strong>提醒类型</strong>：项目申报、奖项申报、专利年费、软著维护、成果转化后评估、涉密成果定期核查。</li>
+            <li><strong>规则配置</strong>：管理员可配置提醒事项名称、截止日期、提前N天提醒、责任部门/责任人、<strong>提醒紧急等级（普通/重要/紧急）</strong>。</li>
+            <li><strong>触达方式</strong>：基础：站内消息 + 邮件；预留短信接口；紧急等级提醒增加系统全局弹窗强提醒。</li>
+            <li><strong>辅助功能</strong>：提醒模板、批量创建、回执确认、逾期未确认自动二次催办。</li>
+        </ul>
+
+        <h3>3.6 全文检索</h3>
+        <p>在基础检索能力上，补充高级检索、权限过滤、检索日志，兼顾查询效率与数据安全。</p>
+        <ul>
+            <li><strong>检索范围</strong>：成果标题、摘要、作者/发明人、关键词、申请号/专利号、合同编号等。</li>
+            <li><strong>检索能力</strong>：支持中文分词、模糊匹配、关键词高亮显示、按相关性排序；新增<strong>高级组合检索</strong>，支持多字段、多条件联合查询。</li>
+            <li><strong>结果筛选</strong>：可按成果类型、所属部门、发表/申请年份、密级、法律状态筛选结果。</li>
+            <li><strong>安全管控</strong>：检索结果自动做<strong>权限过滤</strong>，无权限人员无法查看涉密数据、其他部门/人员的隐私成果。</li>
+            <li><strong>检索运维</strong>：自动记录检索日志，统计热门检索词、高频检索行为，用于系统优化。</li>
+        </ul>
+
+        <h2>4. 非功能需求</h2>
+        <table>
+            <tr>
+                <th>项目</th>
+                <th>具体要求</th>
+            </tr>
+            <tr>
+                <td>响应时间</td>
+                <td>全文检索 &lt; 1秒，统计看板 &lt; 3秒，普通页面 &lt; 2秒，高级检索 &lt; 2秒</td>
+            </tr>
+            <tr>
+                <td>并发支持</td>
+                <td>支持同时50名用户正常并发操作，高峰期无卡顿、报错</td>
+            </tr>
+            <tr>
+                <td>权限安全</td>
+                <td>采用RBAC权限模型+部门数据隔离；涉密数据独立权限体系；所有操作日志<strong>至少保留5年</strong>，日志不可篡改、删除</td>
+            </tr>
+            <tr>
+                <td>数据备份</td>
+                <td>每日自动全量备份数据库，备份文件留存30天；支持手动即时备份</td>
+            </tr>
+            <tr>
+                <td>合规性</td>
+                <td>严格符合知识产权、涉密数据保密要求；所有附件、成果详情均做访问权限校验，禁止越权下载/查看</td>
+            </tr>
+            <tr>
+                <td>移动端适配</td>
+                <td>适配主流手机浏览器/轻应用，支持提醒查看、简易审批、成果查阅、消息回执等核心操作</td>
+            </tr>
+            <tr>
+                <td>灾备恢复</td>
+                <td>故障恢复目标RTO≤4小时，数据丢失容忍RPO≤30分钟，保障业务连续性</td>
+            </tr>
+            <tr>
+                <td>兼容要求</td>
+                <td>兼容主流浏览器（Chrome、Edge、360浏览器）；兼容Windows、macOS操作系统</td>
+            </tr>
+            <tr>
+                <td>性能预案</td>
+                <td>针对十万级以上历史成果数据，提前设计分表、历史归档、索引优化方案，保障长期运行性能</td>
+            </tr>
+        </table>
+
+        <h2>5. 外部API接口预留清单（关键）</h2>
+        <p>接口统一遵循：后台可视化开关、在线测试、超时时间自定义；调用失败自动重试（最多3次），重试失败记录日志并向系统管理员发送告警；所有密钥、接口地址、账号等敏感参数通过<strong>配置中心/环境变量</strong>管理，禁止代码硬编码；接口异常时启用手工录入降级方案，保障业务不中断。</p>
+        <h3>5.1 接口清单</h3>
+        <table>
+            <tr>
+                <th>序号</th>
+                <th>用途</th>
+                <th>对接资源</th>
+                <th>关联模块</th>
+                <th>调用时机</th>
+                <th>必要程度</th>
+            </tr>
+            <tr>
+                <td>1</td>
+                <td>论文信息自动补全</td>
+                <td>Crossref、Scopus、OpenAlex（支持多源切换、优先级配置）</td>
+                <td>成果登记</td>
+                <td>用户输入DOI后点击查询</td>
+                <td>★★★★★</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>论文引文数据获取</td>
+                <td>Crossref、Scopus、OpenAlex、Dimensions API</td>
+                <td>统计分析</td>
+                <td>每月批量更新、单篇成果手动刷新</td>
+                <td>★★★★☆</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>专利法律状态及年费信息同步</td>
+                <td>国家知识产权局（CNIPA）开放接口、正规专利数据服务商</td>
+                <td>专利登记、费用管理</td>
+                <td>成果登记时实时调用、每月定时全量同步</td>
+                <td>★★★★★</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td>人员/部门数据同步</td>
+                <td>院内HR系统、统一身份认证（LDAP/OAuth）</td>
+                <td>用户管理、权限体系</td>
+                <td>每日增量同步、用户登录实时校验</td>
+                <td>★★★★☆</td>
+            </tr>
+            <tr>
+                <td>5</td>
+                <td>邮件通知推送</td>
+                <td>企业邮箱SMTP、第三方邮件API（SendCloud、阿里云）</td>
+                <td>申报提醒、逾期预警、报表推送</td>
+                <td>提醒/事件触发时即时调用</td>
+                <td>★★★★★</td>
+            </tr>
+            <tr>
+                <td>6</td>
+                <td>短信通知（可选）</td>
+                <td>短信网关</td>
+                <td>申报提醒、高优先级预警</td>
+                <td>紧急预警备用渠道</td>
+                <td>★★★☆☆</td>
+            </tr>
+            <tr>
+                <td>7</td>
+                <td>财务数据对接（可选）</td>
+                <td>院内财务系统API</td>
+                <td>费用管理</td>
+                <td>缴费完成后同步凭证、对账数据</td>
+                <td>★★★☆☆</td>
+            </tr>
+        </table>
+
+        <h3>5.2 接口补充规范</h3>
+        <ul>
+            <li>多数据源规则：配置接口调用优先级，多数据源返回数据不一致时，按预设规则做数据清洗、冲突判定，并保留原始数据日志；</li>
+            <li>流量管控：针对国知局等有调用频次限制的接口，增设<strong>接口限流、异步任务队列</strong>，避免超限封禁；</li>
+            <li>运维监控：搭建接口监控大盘，实时展示接口调用量、成功率、平均耗时、异常记录；</li>
+            <li>数据映射：统一定义外部接口字段与系统内部字段的映射关系、数据格式转换规则。</li>
+        </ul>
+
+        <h2>6. 数据模型概览（关键实体）</h2>
+        <h3>6.1 设计原则</h3>
+        <ol>
+            <li>所有主表配套<strong>历史归档表</strong>，状态变更、数据修改后归档历史数据，提升主表查询性能；</li>
+            <li>核心表建立主键、外键、业务索引（DOI、申请号、登记号、部门ID、用户ID等）；</li>
+            <li>独立拆分附件表、数据字典表，实现通用数据统一管理；</li>
+            <li>表间关联清晰，支持联表查询、统计分析。</li>
+        </ol>
+
+        <h3>6.2 核心实体表清单</h3>
+        <ul>
+            <li><strong>论文表</strong>：id, title, doi, authors, outer_authors, cooperate_unit, journal, issn_cn, volume_page, publish_year, impact_factor, citation_count, included_type, partition, status, abstract, secret_level, dept_id, create_user, create_time</li>
+            <li><strong>专利表</strong>：id, name, application_no, grant_no, filing_date, grant_date, patent_type, pct_stage, entry_date, country, next_fee_date, fee_amount, agency, legal_status, secret_level, dept_id</li>
+            <li><strong>软著表</strong>：id, name, registration_no, publish_date, register_date, version, software_type, software_intro, run_env, cooperate_unit, dept_id</li>
+            <li><strong>费用表</strong>：id, relation_type, relation_id, fee_type, fund_source, amount, due_date, paid_date, voucher_no, pay_status, create_user</li>
+            <li><strong>转化项目表</strong>：id, result_type, result_id, contract_no, partner, contract_amount, received_amount, transform_type, distribute_ratio, finish_status, abnormal_reason</li>
+            <li><strong>转化收益分配表</strong>：id, transform_id, inner_ratio, team_ratio, personal_ratio, actual_amount, voucher_file, record_time</li>
+            <li><strong>提醒任务表</strong>：id, title, target_type, target_id, remind_date, remind_level, receiver_id, is_sent, is_confirm, confirm_time</li>
+            <li><strong>操作日志表</strong>：id, user_id, operate_type, table_name, record_id, old_value, new_value, ip_address, operate_time</li>
+            <li><strong>附件表</strong>：id, relation_type, relation_id, file_name, file_type, file_path, version, upload_user, secret_level, download_permission</li>
+            <li><strong>基础支撑表</strong>：用户表、部门表、数据字典表、审批流程表、接口配置表、检索日志表</li>
+        </ul>
+
+        <h3>6.3 关系说明</h3>
+        <p>费用表、转化项目表通过<code>relation_type</code>+<code>relation_id</code>关联论文/专利/软著三大成果主体；所有业务表通过<code>dept_id</code>、<code>user_id</code>关联部门、用户表，实现数据隔离；附件表与所有成果、合同、凭证数据一对多关联。</p>
+
+        <h2>7. 验收标准</h2>
+        <h3>7.1 功能验收</h3>
+        <ol>
+            <li>完整实现成果登记、审核、费用管理、转化跟踪、统计分析、申报提醒、全文检索全部功能，各类审批流程、异常状态流转正常；</li>
+            <li>附件版本管理、权限管控、审计日志、回执确认等辅助功能可用；</li>
+            <li>多级审批、差异化流程、批量操作、自定义报表等扩展功能正常生效。</li>
+        </ol>
+
+        <h3>7.2 性能验收</h3>
+        <p>全文检索针对10000条成果数据，平均响应时间≤1秒；所有页面、接口响应时间符合非功能指标要求；50用户并发操作无卡顿、崩溃。</p>
+
+        <h3>7.3 接口验收</h3>
+        <ol>
+            <li>至少成功对接<strong>DOI自动补全、邮件通知</strong>两大核心API，演示环境可使用Mock接口替代；</li>
+            <li>接口重试、告警、开关配置、超时设置功能正常；<strong>接口降级方案可用</strong>，接口故障时可正常手工录入数据；</li>
+            <li>提供完整接口扩展文档，明确新增API的配置、联调、运维方式。</li>
+        </ol>
+
+        <h3>7.4 安全与合规验收</h3>
+        <ol>
+            <li>RBAC权限、部门数据隔离、涉密数据管控生效，无越权访问、越权操作问题；</li>
+            <li>操作日志完整留存，可正常查询、导出，日志无法被篡改；</li>
+            <li>数据每日自动备份功能正常，备份文件可正常恢复。</li>
+        </ol>
+
+        <h3>7.5 运维与兼容性验收</h3>
+        <ol>
+            <li>系统配置、字典维护、接口管理、日志查询等运维功能可用；</li>
+            <li>适配指定浏览器、操作系统及移动端核心功能；</li>
+            <li>灾备、异常告警功能正常触发。</li>
+        </ol>
+
+        <div class="tip">
+            <strong>附加说明</strong>
+            <p>1. 本文档为最终版需求规格说明书，可作为开发、测试、项目交付的正式依据；</p>
+            <p>2. 项目按<strong>一期、二期</strong>分阶段落地，可根据实际工期、预算拆分功能范围；</p>
+            <p>3. 所有自定义配置项（审批流、提醒规则、报表、效益指标）均支持后期业务人员自主维护，无需开发介入。</p>
+        </div>
+    </div>
+</body>
+</html>

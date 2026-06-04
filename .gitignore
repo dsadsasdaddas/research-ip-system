@@ -1,0 +1,27 @@
+# ===== 依赖(体积巨大,绝不进 git,用 npm install 还原)=====
+node_modules/
+
+# ===== 构建产物(自动生成,不用存)=====
+dist/
+build/
+
+# ===== 环境变量:含数据库密码、密钥,绝对不能提交 =====
+.env
+.env.local
+.env.*.local
+
+# ===== 日志 =====
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# ===== 数据库数据卷(如果挂在项目目录里)=====
+mysql-data/
+
+# ===== 编辑器 / 系统垃圾文件 =====
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
