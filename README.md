@@ -114,3 +114,4 @@ homeworl/
 | 2026-06-04 | 初始化 git 仓库;用 Docker 搭好 MySQL(research_db);补充 README / CLAUDE 文档 |
 | 2026-06-05 | 用 NestJS 脚手架生成后端骨架,端口改为 3001(避开 One API),冒烟测试返回 Hello World |
 | 2026-06-05 | 后端接入 TypeORM + @nestjs/config,成功连上 MySQL;确定一个月 4 周计划(含 Rust 自研检索亮点) |
+| 2026-06-05 | 第 1 周:按 §3.1.1/§6.2 定义论文实体,paper 表自动建成(utf8mb4,中文读写正常) |

@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { PapersModule } from './papers/papers.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AppService } from './app.service';
       autoLoadEntities: true, // 自动加载我们定义的实体(表)
       synchronize: true, // 开发期:根据实体自动建/改表。⚠️ 生产环境要关掉
     }),
+    PapersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
