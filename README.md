@@ -65,6 +65,20 @@ npm install
 npm run dev
 ```
 
+## 接口(论文模块)
+
+后端地址 `http://localhost:3001`。
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/papers` | 新增论文(JSON,标题必填) |
+| GET | `/papers` | 列表;`?keyword=` 按标题模糊搜 |
+| GET | `/papers/:id` | 查单条 |
+| PATCH | `/papers/:id` | 更新(只传要改的字段) |
+| DELETE | `/papers/:id` | 删除 |
+
+字段定义见 `backend/src/papers/entities/paper.entity.ts`(对照说明书 §3.1.1 / §6.2)。
+
 ## 项目结构
 
 ```
@@ -115,3 +129,4 @@ homeworl/
 | 2026-06-05 | 用 NestJS 脚手架生成后端骨架,端口改为 3001(避开 One API),冒烟测试返回 Hello World |
 | 2026-06-05 | 后端接入 TypeORM + @nestjs/config,成功连上 MySQL;确定一个月 4 周计划(含 Rust 自研检索亮点) |
 | 2026-06-05 | 第 1 周:按 §3.1.1/§6.2 定义论文实体,paper 表自动建成(utf8mb4,中文读写正常) |
+| 2026-06-05 | 论文模块后端完成:5 个 REST 接口(增删改查 + 关键词搜索)+ 全局入参校验,curl 全测通过 |
