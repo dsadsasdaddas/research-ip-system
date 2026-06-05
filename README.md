@@ -43,13 +43,16 @@ docker compose ps         # 查看是否在运行
 
 > ⚠️ 此密码仅本地开发用;真实部署时改掉,并写进 `.env`(不进 git)。
 
-### 2. 启动后端 *(待搭建)*
+### 2. 启动后端
 
 ```bash
 cd backend
-npm install
-npm run start:dev
+npm install            # 克隆项目后首次需要,把依赖装回来
+npm run start:dev      # 开发模式,改代码自动重启
 ```
+
+后端运行在 **http://localhost:3001**。
+> 为什么是 3001 不是 3000?本机 3000 端口已被 One API 服务占用,故后端避开,用 3001。
 
 ### 3. 启动前端 *(待搭建)*
 
@@ -64,7 +67,7 @@ npm run dev
 ```
 homeworl/
 ├── docker-compose.yml      # 本地 MySQL 配置
-├── backend/                # NestJS 后端(待搭建)
+├── backend/                # NestJS 后端(端口 3001)
 ├── frontend/               # Vue 前端(待搭建)
 ├── 研究院科研成果管理系统说明.html   # 需求说明书
 ├── README.md               # 本文件
@@ -74,7 +77,8 @@ homeworl/
 ## 开发路线图
 
 - [x] **第 0 步** 环境配置:Node / Git / Docker + MySQL 跑通
-- [ ] **第 0 步(续)** 搭建前后端骨架,三层打通
+- [x] **第 0 步(续 a)** 后端 NestJS 骨架(端口 3001),冒烟测试通过
+- [ ] **第 0 步(续 b)** 前端 Vue 骨架 + 后端连上 MySQL,三层打通
 - [ ] **第 1 步** 论文登记:增 / 删 / 改 / 查
 - [ ] **第 2 步** 登录 + 简单权限(本人只看本人)
 - [ ] **第 3 步** 全文检索 + ECharts 统计看板
@@ -86,3 +90,4 @@ homeworl/
 | 日期 | 进展 |
 |------|------|
 | 2026-06-04 | 初始化 git 仓库;用 Docker 搭好 MySQL(research_db);补充 README / CLAUDE 文档 |
+| 2026-06-05 | 用 NestJS 脚手架生成后端骨架,端口改为 3001(避开 One API),冒烟测试返回 Hello World |
