@@ -57,25 +57,28 @@ npm run start:dev      # 开发模式,改代码自动重启
 后端运行在 **http://localhost:3001**。
 > 为什么是 3001 不是 3000?本机 3000 端口已被 One API 服务占用,故后端避开,用 3001。
 
-### 3. 启动前端 *(待搭建)*
+### 3. 启动前端
 
 ```bash
 cd frontend
-npm install
-npm run dev
+npm install            # 首次需要
+npm run dev            # 开发模式
 ```
+
+前端运行在 **http://localhost:5173**,浏览器打开即可。
+> 前端通过 Vite 代理把 `/api` 请求转发到后端 3001,所以代码里不用写死后端地址,也没有跨域问题。
 
 ## 接口(论文模块)
 
-后端地址 `http://localhost:3001`。
+后端地址 `http://localhost:3001`,所有接口统一挂在 `/api` 前缀下。
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| POST | `/papers` | 新增论文(JSON,标题必填) |
-| GET | `/papers` | 列表;`?keyword=` 按标题模糊搜 |
-| GET | `/papers/:id` | 查单条 |
-| PATCH | `/papers/:id` | 更新(只传要改的字段) |
-| DELETE | `/papers/:id` | 删除 |
+| POST | `/api/papers` | 新增论文(JSON,标题必填) |
+| GET | `/api/papers` | 列表;`?keyword=` 按标题模糊搜 |
+| GET | `/api/papers/:id` | 查单条 |
+| PATCH | `/api/papers/:id` | 更新(只传要改的字段) |
+| DELETE | `/api/papers/:id` | 删除 |
 
 字段定义见 `backend/src/papers/entities/paper.entity.ts`(对照说明书 §3.1.1 / §6.2)。
 
@@ -84,11 +87,10 @@ npm run dev
 ```
 homeworl/
 ├── docker-compose.yml      # 本地 MySQL 配置
-├── backend/                # NestJS 后端(端口 3001)
-├── frontend/               # Vue 前端(待搭建)
+├── backend/                # NestJS 后端(端口 3001,接口前缀 /api)
+├── frontend/               # Vue 前端(端口 5173)
 ├── 研究院科研成果管理系统说明.html   # 需求说明书
-├── README.md               # 本文件
-└── CLAUDE.md               # 给 AI 协作的项目说明
+└── README.md               # 本文件
 ```
 
 ## 开发路线图(一个月 · 4 周)
@@ -99,10 +101,10 @@ homeworl/
 - [x] 环境:Node / Git / Docker + MySQL
 - [x] 后端 NestJS 骨架(端口 3001)
 - [x] 后端接入 TypeORM 并连上 MySQL(连接验证通过)
-- [ ] 前端 Vue 骨架,三层打通
+- [x] 前端 Vue 骨架,三层打通(Vite+Vue3+Element Plus,经 /api 代理增删改查跑通)
 
 **第 1 周 · 核心系统(能用、能演示)**
-- [ ] 论文登记 增/删/改/查(字段按说明书 §3.1.1 / §6.2)
+- [x] 论文登记 增/删/改/查(后端 5 接口 + 前端列表/弹窗表单,全字段按说明书 §3.1.1 / §6.2)
 - [ ] 登录 + 基础权限
 - [ ] 基础检索 + ECharts 统计看板(先用 MySQL)
 - [ ] DOI 自动补全(对接 Crossref,§5 接口①)
@@ -130,3 +132,4 @@ homeworl/
 | 2026-06-05 | 后端接入 TypeORM + @nestjs/config,成功连上 MySQL;确定一个月 4 周计划(含 Rust 自研检索亮点) |
 | 2026-06-05 | 第 1 周:按 §3.1.1/§6.2 定义论文实体,paper 表自动建成(utf8mb4,中文读写正常) |
 | 2026-06-05 | 论文模块后端完成:5 个 REST 接口(增删改查 + 关键词搜索)+ 全局入参校验,curl 全测通过 |
+| 2026-06-06 | 搭好 Vue3 前端(Vite+Element Plus):论文列表(表格+关键词搜)+ 弹窗表单(全字段,分区块);后端加 /api 全局前缀,前端用 Vite 代理转发;三层增删改查端到端跑通 |

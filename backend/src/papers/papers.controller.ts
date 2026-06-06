@@ -14,12 +14,12 @@ import { UpdatePaperDto } from './dto/update-paper.dto';
 import { PapersService } from './papers.service';
 
 /**
- * 论文 REST 接口(统一前缀 /papers):
- *   POST   /papers         新增论文
- *   GET    /papers         列表(?keyword=xxx 按标题搜)
- *   GET    /papers/:id     查单条
- *   PATCH  /papers/:id     更新
- *   DELETE /papers/:id     删除
+ * 论文 REST 接口(全局前缀 /api 见 main.ts,故实际路径如下):
+ *   POST   /api/papers         新增论文
+ *   GET    /api/papers         列表(?keyword=xxx 按标题搜)
+ *   GET    /api/papers/:id     查单条
+ *   PATCH  /api/papers/:id     更新
+ *   DELETE /api/papers/:id     删除
  */
 @Controller('papers')
 export class PapersController {
