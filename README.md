@@ -68,9 +68,9 @@ npm run dev            # 开发模式
 前端运行在 **http://localhost:5173**,浏览器打开即可。
 > 前端通过 Vite 代理把 `/api` 请求转发到后端 3001,所以代码里不用写死后端地址,也没有跨域问题。
 
-## 接口(论文模块)
+## 接口(成果模块)
 
-后端地址 `http://localhost:3001`,所有接口统一挂在 `/api` 前缀下。
+后端地址 `http://localhost:3001`,所有接口统一挂在 `/api` 前缀下。三类成果(论文/专利/软著)接口同构:
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
@@ -80,7 +80,8 @@ npm run dev            # 开发模式
 | PATCH | `/api/papers/:id` | 更新(只传要改的字段) |
 | DELETE | `/api/papers/:id` | 删除 |
 
-字段定义见 `backend/src/papers/entities/paper.entity.ts`(对照说明书 §3.1.1 / §6.2)。
+> 专利、软著把上表的 `papers` 换成 `patents` / `copyrights` 即可(关键词分别按专利/软著名称搜)。
+> 字段定义见各自实体:`backend/src/{papers,patents,copyrights}/entities/*.entity.ts`(对照说明书 §3.1.1 / §3.1.2 / §3.1.3 / §6.2)。
 
 ## 项目结构
 
@@ -88,7 +89,12 @@ npm run dev            # 开发模式
 homeworl/
 ├── docker-compose.yml      # 本地 MySQL 配置
 ├── backend/                # NestJS 后端(端口 3001,接口前缀 /api)
+│   └── src/{papers,patents,copyrights}/   # 三类成果模块(实体/DTO/服务/控制器)
 ├── frontend/               # Vue 前端(端口 5173)
+│   └── src/
+│       ├── layouts/AppLayout.vue       # 布局壳(侧栏+顶栏)
+│       ├── components/                 # 复用组件:ResourcePage(通用列表页)+ SchemaForm(配置驱动表单)
+│       └── modules/{paper,patent,copyright}.js   # 各成果的字段配置(页面=配置+复用组件)
 ├── 研究院科研成果管理系统说明.html   # 需求说明书
 └── README.md               # 本文件
 ```
@@ -121,7 +127,8 @@ homeworl/
 **第 4 周 · 交付**
 - [ ] Docker 一键部署整套
 - [ ] 数据大屏打磨、文档完善、答辩准备
-- [ ] 扩展:专利 / 软著建表登记、年费提醒(有余力)
+- [x] 专利 / 软著建表 + 基础登记(配置驱动复用组件,字段按 §3.1.2 / §3.1.3 / §6.2)
+- [ ] 扩展:年费提醒(有余力)
 
 ## 开发日志
 
@@ -133,3 +140,4 @@ homeworl/
 | 2026-06-05 | 第 1 周:按 §3.1.1/§6.2 定义论文实体,paper 表自动建成(utf8mb4,中文读写正常) |
 | 2026-06-05 | 论文模块后端完成:5 个 REST 接口(增删改查 + 关键词搜索)+ 全局入参校验,curl 全测通过 |
 | 2026-06-06 | 搭好 Vue3 前端(Vite+Element Plus):论文列表(表格+关键词搜)+ 弹窗表单(全字段,分区块);后端加 /api 全局前缀,前端用 Vite 代理转发;三层增删改查端到端跑通 |
+| 2026-06-06 | 前端定调:左侧栏+顶栏布局 + 中性灰克制风格(设计令牌);抽出复用组件 ResourcePage / SchemaForm(配置驱动)。新增专利、软著后端模块 + 字段配置,三类成果登记全部跑通(端到端验证) |

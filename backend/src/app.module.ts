@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PapersModule } from './papers/papers.module';
+import { PatentsModule } from './patents/patents.module';
+import { CopyrightsModule } from './copyrights/copyrights.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { PapersModule } from './papers/papers.module';
       synchronize: true, // 开发期:根据实体自动建/改表。⚠️ 生产环境要关掉
     }),
     PapersModule,
+    PatentsModule,
+    CopyrightsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
