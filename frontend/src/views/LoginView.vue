@@ -29,13 +29,8 @@ async function handleLogin() {
 <template>
   <div class="login-page">
     <div class="card">
-      <div class="brand">
-        <div class="brand-mark">科</div>
-        <div class="brand-text">科研成果管理系统</div>
-      </div>
-
-      <div class="title">登录</div>
-      <div class="subtitle">请输入账号继续</div>
+      <div class="title">科研成果管理系统</div>
+      <div class="subtitle">请使用您的账号登录</div>
 
       <el-form class="form" @submit.prevent="handleLogin">
         <label class="field-label">用户名</label>
@@ -47,7 +42,7 @@ async function handleLogin() {
           @keyup.enter="handleLogin"
         />
 
-        <label class="field-label" style="margin-top: 18px">密码</label>
+        <label class="field-label">密码</label>
         <el-input
           v-model="form.password"
           size="large"
@@ -81,69 +76,53 @@ async function handleLogin() {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
+  padding: 60px 24px;
 }
 
 .card {
   width: 100%;
-  max-width: 380px;
+  max-width: 460px;
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 40px 36px 32px;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 32px;
-}
-.brand-mark {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  background: var(--el-color-primary);
-  color: #fff;
-  font-size: 16px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.brand-text {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
+  border-radius: 10px;
+  padding: 72px 64px 56px;
 }
 
 .title {
-  font-size: 22px;
+  font-size: 30px;
   font-weight: 600;
+  letter-spacing: 2px;
   color: var(--text-primary);
-  margin-bottom: 6px;
+  margin-bottom: 12px;
+  text-align: center;
 }
 .subtitle {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-secondary);
-  margin-bottom: 28px;
+  text-align: center;
+  margin-bottom: 56px;
 }
 
 .field-label {
   display: block;
   font-size: 13px;
   color: var(--text-regular);
-  margin-bottom: 6px;
+  margin: 22px 0 8px;
+}
+.field-label:first-of-type {
+  margin-top: 0;
 }
 
 .submit {
   width: 100%;
-  margin-top: 24px;
-  letter-spacing: 4px;
+  margin-top: 40px;
+  height: 46px;
+  font-size: 15px;
+  letter-spacing: 6px;
 }
 
 .hint {
-  margin-top: 20px;
+  margin-top: 36px;
   font-size: 12px;
   color: var(--text-secondary);
   text-align: center;
@@ -152,8 +131,14 @@ async function handleLogin() {
   background: var(--bg-muted);
   border: 1px solid var(--border-color);
   border-radius: 3px;
-  padding: 0 4px;
+  padding: 1px 5px;
   font-size: 11px;
   color: var(--text-regular);
+}
+
+@media (max-width: 520px) {
+  .card { padding: 48px 32px 40px; }
+  .title { font-size: 24px; }
+  .subtitle { margin-bottom: 36px; }
 }
 </style>
