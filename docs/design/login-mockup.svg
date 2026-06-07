@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000">
+  <!-- paper -->
+  <rect width="1600" height="1000" fill="#faf8f3"/>
+  <!-- faint warm tint vignette: a single soft rectangle for paper feel -->
+  <rect x="0" y="0" width="1600" height="1000" fill="url(#paper)" opacity="0.35"/>
+  <defs>
+    <radialGradient id="paper" cx="50%" cy="50%" r="65%">
+      <stop offset="0%" stop-color="#faf8f3" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#e9e3d4" stop-opacity="0.55"/>
+    </radialGradient>
+    <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M 80 0 L 0 0 0 80" fill="none" stroke="#1f2329" stroke-width="0.3" opacity="0.04"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#grid)"/>
+
+  <!-- ============ TOP METADATA BAND ============ -->
+  <g font-family="Liberation Serif, DejaVu Serif, serif" fill="#1f2329">
+    <!-- top-left: institution masthead small caps -->
+    <text x="120" y="80" font-size="10" letter-spacing="3.5" font-weight="400" font-family="Droid Sans Fallback, serif">
+      ACADEMIA SCIENTIFICA · 中国研究院
+    </text>
+    <text x="120" y="98" font-size="9" letter-spacing="2.4" fill="#86909c">
+      REGISTRY OF AUTHORED WORKS · INTELLECTUAL PROPERTY
+    </text>
+    <!-- top-right: folio / serial -->
+    <text x="1480" y="80" font-size="10" letter-spacing="3.5" text-anchor="end">
+      VOL. XII · No. 06 · MMXXVI
+    </text>
+    <text x="1480" y="98" font-size="9" letter-spacing="2.4" fill="#86909c" text-anchor="end">
+      ACCESS CONTROL · FOLIO I OF I
+    </text>
+  </g>
+
+  <!-- hairline top rule -->
+  <line x1="120" y1="118" x2="1480" y2="118" stroke="#1f2329" stroke-width="0.5"/>
+
+  <!-- ============ MASTHEAD ============ -->
+  <g text-anchor="middle" fill="#1f2329">
+    <!-- tiny eyebrow -->
+    <text x="800" y="240" font-family="Liberation Serif, serif"
+          font-size="11" letter-spacing="6" fill="#4e5969">
+      EST. MCMLVIII · A REGISTRY FOR AUTHORED WORKS
+    </text>
+
+    <!-- big serif title -->
+    <text x="800" y="330" font-family="Droid Sans Fallback, serif"
+          font-size="58" letter-spacing="12" font-weight="400">
+      科研成果与知识产权
+    </text>
+    <text x="800" y="408" font-family="Droid Sans Fallback, serif"
+          font-size="58" letter-spacing="12" font-weight="400">
+      管 理 系 统
+    </text>
+
+    <!-- italic latin under-title -->
+    <text x="800" y="450" font-family="Liberation Serif, serif"
+          font-style="italic" font-size="18" letter-spacing="1.5" fill="#4e5969">
+      Registry of Research Output &amp; Intellectual Property
+    </text>
+
+    <!-- steel-blue accent: a single short underscore beneath the title -->
+    <line x1="760" y1="475" x2="840" y2="475" stroke="#3b5b8c" stroke-width="1.4"/>
+  </g>
+
+  <!-- ============ HAIRLINE DIVIDER ============ -->
+  <line x1="120" y1="560" x2="1480" y2="560" stroke="#1f2329" stroke-width="0.5"/>
+
+  <!-- ============ FORM ZONE ============ -->
+  <g font-family="Liberation Serif, serif" fill="#1f2329">
+    <!-- section eyebrow -->
+    <text x="600" y="610" font-size="10" letter-spacing="4.5" fill="#4e5969">
+      § I.  AUTHENTICATION
+    </text>
+
+    <!-- USERNAME -->
+    <text x="600" y="680" font-size="11" letter-spacing="4" font-family="Droid Sans Fallback, serif">USERNAME / 用户名</text>
+    <line x1="600" y1="722" x2="1000" y2="722" stroke="#1f2329" stroke-width="0.8"/>
+    <text x="600" y="715" font-family="Liberation Serif, Droid Sans Fallback, serif"
+          font-size="22" font-style="italic" fill="#1f2329">
+      cs_user
+    </text>
+
+    <!-- PASSWORD -->
+    <text x="600" y="790" font-size="11" letter-spacing="4" font-family="Droid Sans Fallback, serif">PASSWORD / 口令</text>
+    <line x1="600" y1="832" x2="1000" y2="832" stroke="#1f2329" stroke-width="0.8"/>
+    <text x="600" y="825" font-family="Liberation Serif, serif"
+          font-size="22" letter-spacing="6" fill="#1f2329">
+      • • • • • • • •
+    </text>
+
+    <!-- ENTER action: text + steel-blue arrow -->
+    <g>
+      <text x="600" y="900" font-size="12" letter-spacing="6" fill="#3b5b8c">
+        ENTER  THE  REGISTRY
+      </text>
+      <line x1="780" y1="895" x2="828" y2="895" stroke="#3b5b8c" stroke-width="0.8"/>
+      <polyline points="822,889 830,895 822,901" fill="none" stroke="#3b5b8c" stroke-width="0.8"/>
+    </g>
+  </g>
+
+  <!-- ============ SIDE INDEX (right column) ============ -->
+  <g font-family="Liberation Serif, serif" fill="#4e5969">
+    <text x="1100" y="610" font-size="10" letter-spacing="4">§ II.  COLOPHON</text>
+
+    <!-- key-value lines, in the spirit of a catalog card -->
+    <g font-size="11" letter-spacing="0.5">
+      <text x="1100" y="680">SYSTEM</text>          <text x="1480" y="680" text-anchor="end">RESEARCH MIS · v0.7</text>
+      <text x="1100" y="710">SET IN</text>          <text x="1480" y="710" text-anchor="end">LIBERATION SERIF · SOURCE HAN</text>
+      <text x="1100" y="740">RULES</text>           <text x="1480" y="740" text-anchor="end">0.5 PT GRAPHITE</text>
+      <text x="1100" y="770">PAPER</text>           <text x="1480" y="770" text-anchor="end">#FAF8F3</text>
+      <text x="1100" y="800">ACCENT</text>          <text x="1480" y="800" text-anchor="end">STEEL BLUE · #3B5B8C</text>
+      <text x="1100" y="830">GRID</text>            <text x="1480" y="830" text-anchor="end">XII · MODULAR · OCTAVE</text>
+      <text x="1100" y="860">ROLES</text>           <text x="1480" y="860" text-anchor="end">VII · SEE FOLIO II</text>
+    </g>
+
+    <!-- a tiny steel-blue square as the only ornament -->
+    <rect x="1465" y="673" width="15" height="2.5" fill="#3b5b8c"/>
+  </g>
+
+  <!-- ============ BOTTOM RULE & COLOPHON ============ -->
+  <line x1="120" y1="940" x2="1480" y2="940" stroke="#1f2329" stroke-width="0.5"/>
+  <g font-family="Liberation Serif, serif" fill="#86909c">
+    <text x="120" y="965" font-size="9" letter-spacing="2.5">
+      DESIGN · CITATION GEOMETRY · A. D. MMXXVI
+    </text>
+    <text x="1480" y="965" font-size="9" letter-spacing="2.5" text-anchor="end">
+      PRESS · COWORK STUDIO · BEIJING
+    </text>
+  </g>
+</svg>
