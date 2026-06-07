@@ -20,7 +20,7 @@ export class Paper {
   @Column({ length: 500, comment: '论文标题' })
   title!: string;
 
-  @Column({ unique: true, nullable: true, comment: 'DOI;唯一——§3.1.1 同一DOI只能登记一条' })
+  @Column({ length: 100, unique: true, nullable: true, comment: 'DOI;唯一——§3.1.1 同一DOI只能登记一条' })
   doi!: string | null;
 
   @Column({ name: 'first_author', length: 100, nullable: true, comment: '第一作者' })
