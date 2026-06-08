@@ -42,9 +42,14 @@ export class AttachmentsService {
     return this.repo.save(att);
   }
 
-  async list(relationType: string, relationId: number) {
+  async list(relationType?: string, relationId?: number) {
+    // 仅把"有值"的条件放进 where:不传过滤参数时返回全部,
+    // 否则把 undefined/NaN 塞进 where 会让新版 TypeORM 直接报错(500)。
+    const where: { relationType?: string; relationId?: number } = {};
+    if (relationType) where.relationType = relationType;
+    if (relationId !== undefined && !Number.isNaN(relationId)) where.relationId = relationId;
     return this.repo.find({
-      where: { relationType, relationId },
+      where,
       order: { createTime: 'DESC' },
     });
   }
