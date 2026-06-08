@@ -24,10 +24,10 @@ export class User {
   @Column({ length: 255, comment: '密码哈希(bcrypt)' })
   password!: string;
 
-  @Column({ name: 'real_name', length: 50, nullable: true, comment: '真实姓名' })
+  @Column({ type: 'varchar', name: 'real_name', length: 50, nullable: true, comment: '真实姓名' })
   realName!: string | null;
 
-  @Column({ length: 100, nullable: true, comment: '邮箱' })
+  @Column({ type: 'varchar', length: 100, nullable: true, comment: '邮箱' })
   email!: string | null;
 
   @Column({

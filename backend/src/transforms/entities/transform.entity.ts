@@ -16,7 +16,7 @@ export class Transform {
 
   // ========== 关联成果 ==========
 
-  @Column({ name: 'result_type', length: 20, nullable: true, comment: '成果类型:paper/patent/copyright' })
+  @Column({ type: 'varchar', name: 'result_type', length: 20, nullable: true, comment: '成果类型:paper/patent/copyright' })
   resultType!: string | null;
 
   @Column({ name: 'result_id', type: 'int', nullable: true, comment: '关联成果ID' })
@@ -24,10 +24,10 @@ export class Transform {
 
   // ========== 合同基础信息 ==========
 
-  @Column({ name: 'contract_no', length: 100, nullable: true, comment: '合同编号' })
+  @Column({ type: 'varchar', name: 'contract_no', length: 100, nullable: true, comment: '合同编号' })
   contractNo!: string | null;
 
-  @Column({ length: 255, nullable: true, comment: '交易对方' })
+  @Column({ type: 'varchar', length: 255, nullable: true, comment: '交易对方' })
   partner!: string | null;
 
   @Column({
@@ -44,12 +44,13 @@ export class Transform {
   })
   receivedAmount!: number | null;
 
-  @Column({ name: 'transform_date', length: 20, nullable: true, comment: '转化日期(YYYY-MM-DD)' })
+  @Column({ type: 'varchar', name: 'transform_date', length: 20, nullable: true, comment: '转化日期(YYYY-MM-DD)' })
   transformDate!: string | null;
 
   // ========== 转化类型 §3.2 ==========
 
   @Column({
+    type: 'varchar',
     name: 'transform_type',
     length: 50,
     nullable: true,
@@ -72,7 +73,7 @@ export class Transform {
 
   // ========== 收益分配 §3.2 ==========
 
-  @Column({ name: 'distribute_ratio', length: 255, nullable: true, comment: '收益分配比例描述(院内/团队/个人)' })
+  @Column({ type: 'varchar', name: 'distribute_ratio', length: 255, nullable: true, comment: '收益分配比例描述(院内/团队/个人)' })
   distributeRatio!: string | null;
 
   // ========== 归属 ==========
@@ -80,7 +81,7 @@ export class Transform {
   @Column({ name: 'dept_id', type: 'int', nullable: true, comment: '所属部门ID' })
   deptId!: number | null;
 
-  @Column({ name: 'create_user', length: 100, nullable: true, comment: '登记人' })
+  @Column({ type: 'varchar', name: 'create_user', length: 100, nullable: true, comment: '登记人' })
   createUser!: string | null;
 
   @CreateDateColumn({ name: 'create_time', comment: '创建时间' })

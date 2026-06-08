@@ -11,6 +11,6 @@ export class Department {
   @Column({ name: 'parent_id', type: 'int', nullable: true, comment: '上级部门ID' })
   parentId!: number | null;
 
-  @Column({ length: 255, nullable: true, comment: '备注' })
+  @Column({ type: 'varchar', length: 255, nullable: true, comment: '备注' })
   description!: string | null;
 }

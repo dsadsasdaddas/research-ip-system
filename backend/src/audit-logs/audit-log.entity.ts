@@ -12,22 +12,22 @@ export class AuditLog {
   @Column({ name: 'user_id', type: 'int', nullable: true })
   userId!: number | null;
 
-  @Column({ length: 100, nullable: true, comment: '操作人用户名' })
+  @Column({ type: 'varchar', length: 100, nullable: true, comment: '操作人用户名' })
   username!: string | null;
 
-  @Column({ length: 100, nullable: true, comment: '操作人真名' })
+  @Column({ type: 'varchar', length: 100, nullable: true, comment: '操作人真名' })
   realName!: string | null;
 
-  @Column({ length: 20, nullable: true, comment: 'HTTP 方法 POST/PATCH/DELETE' })
+  @Column({ type: 'varchar', length: 20, nullable: true, comment: 'HTTP 方法 POST/PATCH/DELETE' })
   method!: string | null;
 
-  @Column({ length: 255, nullable: true, comment: '请求路径' })
+  @Column({ type: 'varchar', length: 255, nullable: true, comment: '请求路径' })
   path!: string | null;
 
-  @Column({ length: 50, nullable: true, comment: '业务模块 papers/patents/fees/...' })
+  @Column({ type: 'varchar', length: 50, nullable: true, comment: '业务模块 papers/patents/fees/...' })
   module!: string | null;
 
-  @Column({ length: 50, nullable: true, comment: '操作动作 create/update/delete' })
+  @Column({ type: 'varchar', length: 50, nullable: true, comment: '操作动作 create/update/delete' })
   action!: string | null;
 
   @Column({ type: 'text', nullable: true, comment: '请求体(脱敏)' })
@@ -36,7 +36,7 @@ export class AuditLog {
   @Column({ type: 'int', nullable: true, comment: 'HTTP 响应状态码' })
   statusCode!: number | null;
 
-  @Column({ length: 50, nullable: true, comment: '客户端 IP' })
+  @Column({ type: 'varchar', length: 50, nullable: true, comment: '客户端 IP' })
   ip!: string | null;
 
   @CreateDateColumn({ name: 'create_time' })

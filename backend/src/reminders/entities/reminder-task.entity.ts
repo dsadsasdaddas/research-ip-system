@@ -9,7 +9,7 @@ export class ReminderTask {
   @Column({ length: 200, comment: '提醒标题' })
   title!: string;
 
-  @Column({ name: 'target_type', length: 50, nullable: true, comment: 'paper/patent/copyright/transform/rule' })
+  @Column({ type: 'varchar', name: 'target_type', length: 50, nullable: true, comment: 'paper/patent/copyright/transform/rule' })
   targetType!: string | null;
 
   @Column({ name: 'target_id', type: 'int', nullable: true, comment: '关联ID' })
@@ -21,13 +21,13 @@ export class ReminderTask {
   @Column({ name: 'deadline', type: 'date', nullable: true, comment: '事项截止日' })
   deadline!: string | null;
 
-  @Column({ name: 'remind_level', length: 20, default: '普通', comment: '紧急等级: 普通/重要/紧急' })
+  @Column({ type: 'varchar', name: 'remind_level', length: 20, default: '普通', comment: '紧急等级: 普通/重要/紧急' })
   remindLevel!: string;
 
   @Column({ name: 'receiver_id', type: 'int', nullable: true, comment: '接收人用户ID' })
   receiverId!: number | null;
 
-  @Column({ name: 'receiver_name', length: 100, nullable: true })
+  @Column({ type: 'varchar', name: 'receiver_name', length: 100, nullable: true })
   receiverName!: string | null;
 
   @Column({ name: 'dept_id', type: 'int', nullable: true })
