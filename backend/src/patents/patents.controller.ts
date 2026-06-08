@@ -8,10 +8,12 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { CreatePatentDto } from './dto/create-patent.dto';
 import { UpdatePatentDto } from './dto/update-patent.dto';
 import { PatentsService } from './patents.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 /**
  * 专利 REST 接口(全局前缀 /api,故实际路径):
@@ -21,6 +23,7 @@ import { PatentsService } from './patents.service';
  *   PATCH  /api/patents/:id   更新
  *   DELETE /api/patents/:id   删除
  */
+@UseGuards(JwtAuthGuard)
 @Controller('patents')
 export class PatentsController {
   constructor(private readonly patentsService: PatentsService) {}

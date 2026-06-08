@@ -8,10 +8,12 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { CreateTransformDto } from './dto/create-transform.dto';
 import { UpdateTransformDto } from './dto/update-transform.dto';
 import { TransformsService } from './transforms.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 /**
  * 成果转化 REST 接口:
@@ -21,6 +23,7 @@ import { TransformsService } from './transforms.service';
  *   PATCH  /api/transforms/:id
  *   DELETE /api/transforms/:id
  */
+@UseGuards(JwtAuthGuard)
 @Controller('transforms')
 export class TransformsController {
   constructor(private readonly svc: TransformsService) {}
