@@ -49,8 +49,8 @@ export class UsersService {
 
   /** 启动时若无用户则播种默认账号:每个角色一个,便于权限测试 */
   async seedAdmin() {
-    const count = await this.repo.count();
-    if (count > 0) return;
+    // 注:改为"按用户名补齐缺失账号",而非"库非空就整体跳过"。
+    // 否则历史库里只要有 admin,其余角色测试账号永远不会被创建。
 
     // 1) 先建两个部门(计算机所、电子所)
     let deptCs = await this.deptRepo.findOne({ where: { name: '计算机研究所' } });
@@ -78,10 +78,15 @@ export class UsersService {
       { username: 'ee_user',   password: 'Test@123',  realName: '电子所科研',     role: UserRole.RESEARCHER, deptId: deptEe.id },
     ];
 
+    const created: typeof seeds = [];
     for (const s of seeds) {
+      const exists = await this.repo.findOne({ where: { username: s.username } });
+      if (exists) continue; // 已存在则跳过,保证幂等
       await this.create(s);
+      created.push(s);
     }
-    console.log('✅ 测试账号已播种(密码统一 Test@123,管理员 Admin@123):');
-    seeds.forEach((s) => console.log(`   - ${s.username.padEnd(10)} / ${s.password.padEnd(10)} (${s.role})`));
+    if (created.length === 0) return;
+    console.log('✅ 测试账号已补齐(密码统一 Test@123,管理员 Admin@123):');
+    created.forEach((s) => console.log(`   - ${s.username.padEnd(10)} / ${s.password.padEnd(10)} (${s.role})`));
   }
 }
