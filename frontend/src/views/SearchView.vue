@@ -57,7 +57,7 @@ function goDetail(item) {
         <el-checkbox v-for="t in TYPE_OPTS" :key="t.value" :label="t.value">{{ t.label }}</el-checkbox>
       </el-checkbox-group>
       <span style="margin-left: auto; font-size: 12px; color: var(--text-secondary)" v-if="result">
-        共 {{ result.total }} 条结果
+        搜索引擎：{{ result.engine === 'rust' ? 'Rust' : result.engine }} · {{ Number(result.elapsedMs || 0).toFixed(1) }}ms · 共 {{ result.total }} 条结果
       </span>
     </div>
 

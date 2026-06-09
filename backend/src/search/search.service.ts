@@ -6,6 +6,7 @@ import { Patent } from '../patents/entities/patent.entity';
 import { Copyright } from '../copyrights/entities/copyright.entity';
 import type { AuthUser } from '../auth/types/auth-user.interface';
 import { getDeptFilter } from '../common/utils/dept-filter';
+import { RustSearchAdapter, RustSearchDoc, RustSearchDocType } from './rust-search-adapter';
 
 export interface SearchResultItem {
   type: 'paper' | 'patent' | 'copyright';
@@ -14,76 +15,186 @@ export interface SearchResultItem {
   title: string;
   meta: string;
   createTime: Date;
+  score: number;
 }
 
 export interface SearchResult {
+  engine: 'rust';
+  elapsedMs: number;
   total: number;
   items: SearchResultItem[];
+}
+
+interface IndexedSearchItem {
+  doc: RustSearchDoc;
+  result: SearchResultItem;
+}
+
+function isRequestedType(types: string[], type: RustSearchDocType): boolean {
+  return types.length === 0 || types.includes(type);
+}
+
+function joinContent(parts: Array<string | number | null | undefined>): string {
+  return parts.filter((part) => part !== null && part !== undefined && part !== '').join(' ');
+}
+
+function keyOf(type: RustSearchDocType, id: number): string {
+  return `${type}:${id}`;
 }
 
 @Injectable()
 export class SearchService {
   constructor(
-    @InjectRepository(Paper)     private paperRepo: Repository<Paper>,
-    @InjectRepository(Patent)    private patentRepo: Repository<Patent>,
+    @InjectRepository(Paper) private paperRepo: Repository<Paper>,
+    @InjectRepository(Patent) private patentRepo: Repository<Patent>,
     @InjectRepository(Copyright) private copyrightRepo: Repository<Copyright>,
+    private readonly rustSearch: RustSearchAdapter,
   ) {}
 
   async search(q: string, types: string[], user: AuthUser): Promise<SearchResult> {
-    if (!q.trim()) return { total: 0, items: [] };
-    const kw = `%${q.trim()}%`;
+    const keyword = q.trim();
+    if (!keyword) return { engine: 'rust', elapsedMs: 0, total: 0, items: [] };
+
+    const startedAt = process.hrtime.bigint();
+    const indexedItems = await this.loadIndexedItems(types, user);
+    const docs = indexedItems.map((item) => item.doc);
+    const byKey = new Map(indexedItems.map((item) => [keyOf(item.doc.type, item.doc.id), item.result]));
+
+    const hits = this.rustSearch.search(docs, keyword);
+    const items = hits
+      .map((hit) => {
+        const result = byKey.get(keyOf(hit.type, hit.id));
+        return result ? { ...result, score: hit.score } : null;
+      })
+      .filter((item): item is SearchResultItem => item !== null)
+      .slice(0, 50);
+
+    const elapsedMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+    return { engine: 'rust', elapsedMs, total: items.length, items };
+  }
+
+  private async loadIndexedItems(types: string[], user: AuthUser): Promise<IndexedSearchItem[]> {
     const deptId = getDeptFilter(user);
-    const results: SearchResultItem[] = [];
+    const items: IndexedSearchItem[] = [];
 
-    // ----- 论文 -----
-    if (!types.length || types.includes('paper')) {
-      const qb = this.paperRepo.createQueryBuilder('p')
-        .where('(p.title LIKE :kw OR p.authors LIKE :kw OR p.doi LIKE :kw OR p.journal LIKE :kw)', { kw })
-        .orderBy('p.publish_year', 'DESC')
-        .take(30);
+    if (isRequestedType(types, 'paper')) {
+      const qb = this.paperRepo.createQueryBuilder('p').orderBy('p.publish_year', 'DESC');
       if (deptId != null) qb.andWhere('p.dept_id = :did', { did: deptId });
       const rows = await qb.getMany();
-      rows.forEach((r) => results.push({
-        type: 'paper', typeLabel: '论文',
-        id: r.id, title: r.title,
-        meta: [r.authors, r.journal, r.publishYear].filter(Boolean).join(' · '),
-        createTime: r.createTime,
-      }));
+      rows.forEach((row) => items.push(this.indexPaper(row)));
     }
 
-    // ----- 专利 -----
-    if (!types.length || types.includes('patent')) {
-      const qb = this.patentRepo.createQueryBuilder('p')
-        .where('(p.name LIKE :kw OR p.inventors LIKE :kw OR p.application_no LIKE :kw OR p.grant_no LIKE :kw)', { kw })
-        .orderBy('p.filing_date', 'DESC')
-        .take(30);
+    if (isRequestedType(types, 'patent')) {
+      const qb = this.patentRepo.createQueryBuilder('p').orderBy('p.filing_date', 'DESC');
       if (deptId != null) qb.andWhere('p.dept_id = :did', { did: deptId });
       const rows = await qb.getMany();
-      rows.forEach((r) => results.push({
-        type: 'patent', typeLabel: '专利',
-        id: r.id, title: r.name,
-        meta: [r.patentType, r.legalStatus, r.applicationNo].filter(Boolean).join(' · '),
-        createTime: r.createTime,
-      }));
+      rows.forEach((row) => items.push(this.indexPatent(row)));
     }
 
-    // ----- 软著 -----
-    if (!types.length || types.includes('copyright')) {
-      const qb = this.copyrightRepo.createQueryBuilder('c')
-        .where('(c.name LIKE :kw OR c.copyright_owner LIKE :kw OR c.registration_no LIKE :kw)', { kw })
-        .orderBy('c.reg_date', 'DESC')
-        .take(30);
+    if (isRequestedType(types, 'copyright')) {
+      const qb = this.copyrightRepo.createQueryBuilder('c').orderBy('c.register_date', 'DESC');
       if (deptId != null) qb.andWhere('c.dept_id = :did', { did: deptId });
       const rows = await qb.getMany();
-      rows.forEach((r) => results.push({
-        type: 'copyright', typeLabel: '软著',
-        id: r.id, title: r.name,
-        meta: [r.copyrightOwner, r.registrationNo].filter(Boolean).join(' · '),
-        createTime: r.createTime,
-      }));
+      rows.forEach((row) => items.push(this.indexCopyright(row)));
     }
 
-    results.sort((a, b) => (b.createTime > a.createTime ? 1 : -1));
-    return { total: results.length, items: results };
+    return items;
+  }
+
+  private indexPaper(row: Paper): IndexedSearchItem {
+    const type: RustSearchDocType = 'paper';
+    const title = row.title;
+    const meta = [row.authors, row.journal, row.publishYear].filter(Boolean).join(' · ');
+    return {
+      doc: {
+        type,
+        id: row.id,
+        title,
+        content: joinContent([
+          row.title,
+          row.doi,
+          row.firstAuthor,
+          row.correspondingAuthor,
+          row.authors,
+          row.outerAuthors,
+          row.cooperateUnit,
+          row.journal,
+          row.issnCn,
+          row.volumePage,
+          row.publishYear,
+          row.includedType,
+          row.partition,
+          row.status,
+          row.summary,
+          row.secretLevel,
+          row.dependProject,
+        ]),
+      },
+      result: { type, typeLabel: '论文', id: row.id, title, meta, createTime: row.createTime, score: 0 },
+    };
+  }
+
+  private indexPatent(row: Patent): IndexedSearchItem {
+    const type: RustSearchDocType = 'patent';
+    const title = row.name;
+    const meta = [row.patentType, row.legalStatus, row.applicationNo].filter(Boolean).join(' · ');
+    return {
+      doc: {
+        type,
+        id: row.id,
+        title,
+        content: joinContent([
+          row.name,
+          row.inventors,
+          row.outerInventors,
+          row.patentee,
+          row.applicationNo,
+          row.grantNo,
+          row.filingDate,
+          row.grantDate,
+          row.patentType,
+          row.country,
+          row.nextFeeDate,
+          row.agency,
+          row.legalStatus,
+          row.pctStage,
+          row.nationalStage,
+          row.entryDate,
+          row.patentMark,
+          row.dependProject,
+          row.fundSource,
+          row.secretLevel,
+        ]),
+      },
+      result: { type, typeLabel: '专利', id: row.id, title, meta, createTime: row.createTime, score: 0 },
+    };
+  }
+
+  private indexCopyright(row: Copyright): IndexedSearchItem {
+    const type: RustSearchDocType = 'copyright';
+    const title = row.name;
+    const meta = [row.copyrightOwner, row.registrationNo].filter(Boolean).join(' · ');
+    return {
+      doc: {
+        type,
+        id: row.id,
+        title,
+        content: joinContent([
+          row.name,
+          row.copyrightOwner,
+          row.registrationNo,
+          row.publishDate,
+          row.registerDate,
+          row.version,
+          row.softwareType,
+          row.softwareIntro,
+          row.runEnv,
+          row.cooperateUnit,
+          row.dependProject,
+          row.secretLevel,
+        ]),
+      },
+      result: { type, typeLabel: '软著', id: row.id, title, meta, createTime: row.createTime, score: 0 },
+    };
   }
 }
