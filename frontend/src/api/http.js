@@ -6,6 +6,13 @@ const http = axios.create({
   timeout: 10000,
 })
 
+// 请求拦截器:自动带上 JWT token
+http.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) config.headers['Authorization'] = `Bearer ${token}`
+  return config
+})
+
 // 响应拦截器:成功时只把 data 给业务代码;失败时把后端的错误信息整理成一句话再抛出。
 http.interceptors.response.use(
   (res) => res.data,

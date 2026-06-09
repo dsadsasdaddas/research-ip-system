@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,10 +9,14 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { CreatePaperDto } from './dto/create-paper.dto';
 import { UpdatePaperDto } from './dto/update-paper.dto';
 import { PapersService } from './papers.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthUser } from '../auth/types/auth-user.interface';
 
 /**
  * 论文 REST 接口(全局前缀 /api 见 main.ts,故实际路径如下):
@@ -21,6 +26,7 @@ import { PapersService } from './papers.service';
  *   PATCH  /api/papers/:id     更新
  *   DELETE /api/papers/:id     删除
  */
+@UseGuards(JwtAuthGuard)
 @Controller('papers')
 export class PapersController {
   constructor(private readonly papersService: PapersService) {}
@@ -31,8 +37,19 @@ export class PapersController {
   }
 
   @Get()
-  findAll(@Query('keyword') keyword?: string) {
-    return this.papersService.findAll(keyword);
+  findAll(@Query('keyword') keyword?: string, @CurrentUser() user?: AuthUser) {
+    return this.papersService.findAll(keyword, user);
+  }
+
+  /**
+   * DOI 自动补全:按 DOI 从 CrossRef 查询元数据并返回可直接填入表单的字段。
+   * 路由必须在 :id 之前,否则 'doi-lookup' 会被当作 id 参数。
+   * GET /api/papers/doi-lookup?doi=10.xxxx/xxxxx
+   */
+  @Get('doi-lookup')
+  doiLookup(@Query('doi') doi?: string) {
+    if (!doi) throw new BadRequestException('请提供 doi 查询参数');
+    return this.papersService.doiLookup(doi);
   }
 
   @Get(':id')

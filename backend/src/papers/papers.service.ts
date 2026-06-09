@@ -1,9 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Like, Repository } from 'typeorm';
+import { FindOptionsWhere, Like, Repository } from 'typeorm';
 import { CreatePaperDto } from './dto/create-paper.dto';
 import { UpdatePaperDto } from './dto/update-paper.dto';
 import { Paper } from './entities/paper.entity';
+import type { AuthUser } from '../auth/types/auth-user.interface';
+import { getDeptFilter } from '../common/utils/dept-filter';
 
 /**
  * 论文业务逻辑:真正读写数据库的地方。
@@ -22,12 +24,13 @@ export class PapersService {
     return this.paperRepo.save(paper); // 存入数据库
   }
 
-  /** 查询列表;传了 keyword 就按标题模糊搜 */
-  findAll(keyword?: string) {
-    return this.paperRepo.find({
-      where: keyword ? { title: Like(`%${keyword}%`) } : {},
-      order: { createTime: 'DESC' }, // 最新登记的排最前
-    });
+  /** 查询列表;传了 keyword 就按标题模糊搜；部门隔离角色只返回本部门数据 */
+  findAll(keyword?: string, user?: AuthUser): Promise<Paper[]> {
+    const deptId = user ? getDeptFilter(user) : undefined;
+    const where: FindOptionsWhere<Paper> = {};
+    if (deptId != null) where.deptId = deptId;
+    if (keyword) where.title = Like(`%${keyword}%`);
+    return this.paperRepo.find({ where, order: { createTime: 'DESC' } });
   }
 
   /** 查单条;不存在抛 404 */
@@ -51,5 +54,85 @@ export class PapersService {
     const paper = await this.findOne(id);
     await this.paperRepo.remove(paper);
     return { deleted: true, id };
+  }
+
+  /**
+   * 通过 DOI 从 CrossRef API 查询论文元数据并映射到本系统字段。
+   * CrossRef 文档: https://api.crossref.org/swagger-ui/index.html
+   */
+  async doiLookup(doi: string) {
+    if (!doi) throw new BadRequestException('doi 不能为空');
+
+    interface CrossRefMessage {
+      DOI?: string;
+      title?: string[];
+      author?: Array<{ given?: string; family?: string }>;
+      'container-title'?: string[];
+      ISSN?: string[];
+      volume?: string;
+      issue?: string;
+      page?: string;
+      abstract?: string;
+      'is-referenced-by-count'?: number;
+      published?: { 'date-parts': number[][] };
+      'published-print'?: { 'date-parts': number[][] };
+    }
+    interface CrossRefApiResponse { message?: CrossRefMessage }
+
+    const url = `https://api.crossref.org/works/${encodeURIComponent(doi)}`;
+    let json: CrossRefApiResponse;
+    try {
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'ResearchMIS/1.0 (mailto:admin@example.com)' },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (res.status === 404) throw new NotFoundException(`DOI "${doi}" 未找到`);
+      if (!res.ok) throw new BadRequestException(`CrossRef 返回 ${res.status}`);
+      json = (await res.json()) as CrossRefApiResponse;
+    } catch (e) {
+      if (e instanceof NotFoundException || e instanceof BadRequestException) throw e;
+      throw new BadRequestException('请求 CrossRef 失败: ' + (e as Error).message);
+    }
+
+    const m = json?.message;
+    if (!m) throw new BadRequestException('CrossRef 返回数据异常');
+
+    // ---- 作者列表 ----
+    const authors: Array<{ given?: string; family?: string }> = m.author ?? [];
+    const authorNames = authors.map((a) =>
+      [a.given, a.family].filter(Boolean).join(' '),
+    );
+    const firstAuthor = authorNames[0] ?? '';
+
+    // ---- 卷期页码 ----
+    const parts = [
+      m.volume ? `Vol.${m.volume}` : '',
+      m.issue ? `(${m.issue})` : '',
+      m.page ? `, ${m.page}` : '',
+    ].filter(Boolean);
+    const volumePage = parts.join('');
+
+    // ---- 摘要(去掉 JATS XML 标签) ----
+    const rawAbstract: string = m.abstract ?? '';
+    const summary = rawAbstract.replace(/<[^>]+>/g, '').trim();
+
+    // ---- 发表年份 ----
+    const publishYear: number | null =
+      m.published?.['date-parts']?.[0]?.[0] ??
+      m['published-print']?.['date-parts']?.[0]?.[0] ??
+      null;
+
+    return {
+      doi: m.DOI ?? doi,
+      title: m.title?.[0] ?? '',
+      firstAuthor,
+      authors: authorNames.join(', '),
+      journal: m['container-title']?.[0] ?? '',
+      issnCn: m.ISSN?.[0] ?? '',
+      volumePage,
+      publishYear,
+      citationCount: m['is-referenced-by-count'] ?? 0,
+      summary,
+    };
   }
 }

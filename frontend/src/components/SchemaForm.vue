@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { ElMessage } from 'element-plus'
 
 /**
  * 配置驱动的表单:给一份「字段配置」,自动渲染出对应的表单控件。
@@ -30,6 +31,32 @@ const rules = computed(() => {
   }
   return r
 })
+
+// DOI 自动补全:loading 状态 map,key 为字段 prop
+const lookupLoading = ref({})
+
+async function handleLookup(field) {
+  const doi = props.model[field.prop]
+  if (!doi) {
+    ElMessage.warning('请先输入 DOI')
+    return
+  }
+  lookupLoading.value[field.prop] = true
+  try {
+    const result = await field.lookupFn(doi)
+    // 将返回字段合并到 model(跳过空值,保留已有内容)
+    Object.entries(result).forEach(([k, v]) => {
+      if (v !== null && v !== undefined && v !== '') {
+        props.model[k] = v
+      }
+    })
+    ElMessage.success('DOI 信息已自动填充')
+  } catch (e) {
+    ElMessage.error('查询失败:' + (e?.message || '未知错误'))
+  } finally {
+    lookupLoading.value[field.prop] = false
+  }
+}
 
 // 暴露 validate 给父组件(ResourcePage)在保存前触发校验
 defineExpose({ validate: () => formRef.value.validate() })
@@ -79,6 +106,20 @@ defineExpose({ validate: () => formRef.value.validate() })
               style="width: 100%"
               :placeholder="f.placeholder || '选择日期'"
             />
+            <!-- DOI 自动补全:输入框 + 查询按钮 -->
+            <el-input
+              v-else-if="f.type === 'doi-lookup'"
+              v-model="model[f.prop]"
+              :placeholder="f.placeholder"
+              clearable
+            >
+              <template #append>
+                <el-button
+                  :loading="lookupLoading[f.prop]"
+                  @click="handleLookup(f)"
+                >自动补全</el-button>
+              </template>
+            </el-input>
             <!-- 普通文本(默认) -->
             <el-input
               v-else

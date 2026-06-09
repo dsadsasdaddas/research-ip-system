@@ -1,0 +1,156 @@
+# 科研成果与知识产权管理系统 — 开发规范（Codex 记忆）
+
+## 技术栈
+
+| 层 | 技术 |
+|----|------|
+| 前端 | Vue 3 + Element Plus + ECharts + Pinia + Vue Router |
+| 后端 | NestJS + TypeORM + MySQL 8 |
+| 鉴权 | JWT（8h），Bearer token，7 种角色 |
+
+## 目录约定
+
+```
+backend/src/
+  auth/             # 认证：guards、decorators、strategy、types/auth-user.interface.ts
+  common/           # 公共：types/index.ts、utils/dept-filter.ts、interfaces/
+  {module}/         # 业务模块：entities/、dto/、*.service.ts、*.controller.ts、*.module.ts
+  uploads/          # 文件上传目录（multer diskStorage）
+```
+
+## TypeScript 严格规范（必须遵守）
+
+### 1. 禁止 `any`
+- 所有参数、返回值、变量必须有明确类型
+- Service 方法签名必须完整：`async findAll(query: FindAllQuery): Promise<FeeWithAlert[]>`
+- 禁止 `@Body() body: any`，必须用 DTO 类型
+
+### 2. Entity 字段加 `!`（definite assignment assertion）
+```ts
+// ✅ 正确
+@Column() title!: string;
+@Column({ nullable: true }) deptId!: number | null;
+
+// ❌ 错误
+@Column() title: string;
+```
+
+### 3. Nullable 字段明确联合类型
+```ts
+// nullable: true → 类型必须含 null
+@Column({ nullable: true }) paidDate!: string | null;
+@Column({ nullable: true }) amount!: number | null;
+
+// 非 nullable → 纯类型，无 null
+@Column() title!: string;
+```
+
+### 4. DTO 必须用 class-validator 装饰器
+```ts
+import { IsString, IsOptional, IsNumber, IsDateString, IsBoolean, IsEnum } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class CreateFeeDto {
+  @IsOptional() @IsString() relationType?: string;
+  @IsOptional() @Type(() => Number) @IsNumber() relationId?: number;
+  @IsOptional() @IsString() @IsDateString() dueDate?: string;
+}
+```
+
+### 5. `CurrentUser` 返回 `AuthUser`，禁止 `any`
+```ts
+// auth/types/auth-user.interface.ts
+export interface AuthUser {
+  id: number;
+  username: string;
+  realName: string | null;
+  role: UserRole;
+  deptId: number | null;
+}
+
+// 用法
+@Get()
+findAll(@CurrentUser() user: AuthUser) { ... }
+```
+
+### 6. 部门隔离逻辑放 `common/utils/dept-filter.ts`
+```ts
+export function isDeptScoped(role: UserRole): boolean { ... }
+export function getDeptFilter(user: AuthUser): number | undefined { ... }
+```
+
+### 7. 公共类型放 `common/types/index.ts`
+- 分页结果：`PageResult<T>`
+- 查询参数基类：`BaseListQuery`
+
+## 设计系统（前端）
+
+```css
+/* src/styles/index.css 定义的 design tokens，必须用这些，禁用 Element Plus 内部变量 */
+--bg-page: #f5f6f7;     /* 页面背景 */
+--bg-surface: #ffffff;  /* 卡片/侧栏/顶栏 */
+--bg-muted: #fafafa;    /* 表头等浅底 */
+--border-color: #e6e8eb;
+--text-primary: #1f2329;
+--text-regular: #4e5969;
+--text-secondary: #86909c;
+--el-color-primary: #3b5b8c; /* 低饱和钢蓝，克制专业 */
+```
+
+**禁用**：`var(--el-bg-color)`、`var(--el-border-color-lighter)`、`var(--el-text-color-primary)` 等 Element Plus 内部变量。
+
+## 角色列表（UserRole enum）
+
+```ts
+RESEARCHER   = 'researcher'       // 科研人员：仅本部门
+DEPT_SEC     = 'dept_secretary'   // 部门秘书：本部门
+DEPT_ADMIN   = 'dept_admin'       // 部门管理员：本部门
+LEADER       = 'leader'           // 院领导：全院
+SECRET_ADMIN = 'secret_admin'     // 涉密管理员：全院
+AUDITOR      = 'auditor'          // 审计员：只读
+SYS_ADMIN    = 'sys_admin'        // 系统管理员：全局
+```
+
+**部门隔离规则**：`researcher / dept_secretary / dept_admin` → 只查 `dept_id = user.deptId`；其余角色查全院。
+
+## 数据库
+
+- `autoLoadEntities: true`，`synchronize: true`（仅开发）
+- 所有日期字段用 `varchar(20)` 存 `YYYY-MM-DD` 字符串，避免时区问题
+- 业务表必须有 `dept_id`、`create_user`、`create_time`
+
+## 后端接口约定
+
+- 全局前缀 `/api`
+- 全局 `ValidationPipe({ whitelist: true, transform: true })`
+- 全局 `AuditLogInterceptor`（记录写操作）
+- 所有接口用 `@UseGuards(JwtAuthGuard)`
+- 审计日志接口额外加 `RolesGuard` + `@Roles('auditor','sys_admin','leader')`
+
+## 环境变量（backend/.env）
+
+```
+PORT=3001
+DB_HOST=localhost  DB_PORT=3306  DB_USER=root  DB_PASSWORD=root1234  DB_NAME=research_db
+JWT_SECRET=research-mis-secret-2024
+# SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS / SMTP_FROM（不填则邮件禁用）
+```
+
+## 默认账号
+
+- 用户名：`admin`，密码：`Admin@123`，角色：`sys_admin`
+- 启动时 `UsersService.seedAdmin()` 自动创建
+
+## Imported Claude Cowork project instructions
+
+## Rust 搜索迁移与 CI 约束
+
+- 全文检索计划从当前 TypeScript/MySQL LIKE 实现迁移到 Rust `napi-rs` 原生模块。
+- Rust 模块必须先提供最小可测接口：TypeScript/Node 能加载 Rust addon、传入文档、执行搜索并拿到结果。
+- CI 必须覆盖 TS ↔ Rust 桥接验证，确保每次提交后 TypeScript 都能成功调用 Rust 搜索模块。
+- CI 至少包含：
+  1. `backend npm run build`
+  2. Rust search addon 构建
+  3. Node/TypeScript 调用 Rust addon 的 smoke test
+  4. 搜索关键词（如“深度学习”）能返回预期结果
+- 在 Rust 搜索稳定前，NestJS 搜索接口保留当前 MySQL 搜索作为 fallback。

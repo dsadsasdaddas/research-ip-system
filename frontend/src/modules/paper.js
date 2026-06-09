@@ -1,4 +1,5 @@
 import { createCrudApi } from '../api/createCrudApi'
+import http from '../api/http'
 
 // 密级标签颜色:公开=中性灰,其余(内部/涉密)=红,颜色只用来标状态
 const secretTagType = (v) => (v === '公开' ? 'info' : 'danger')
@@ -40,7 +41,13 @@ export default {
       title: '基础信息',
       fields: [
         { prop: 'title', label: '论文标题', span: 24, required: true, placeholder: '必填' },
-        { prop: 'doi', label: 'DOI', placeholder: '如 10.1038/xxxxx' },
+        {
+          prop: 'doi',
+          label: 'DOI',
+          type: 'doi-lookup',
+          placeholder: '如 10.1038/xxxxx,输入后点"自动补全"',
+          lookupFn: (doi) => http.get('/papers/doi-lookup', { params: { doi } }),
+        },
         { prop: 'firstAuthor', label: '第一作者' },
         { prop: 'correspondingAuthor', label: '通讯作者' },
         { prop: 'cooperateUnit', label: '合作单位' },

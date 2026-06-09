@@ -8,10 +8,12 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { CreateCopyrightDto } from './dto/create-copyright.dto';
 import { UpdateCopyrightDto } from './dto/update-copyright.dto';
 import { CopyrightsService } from './copyrights.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 /**
  * 软著 REST 接口(全局前缀 /api,故实际路径):
@@ -21,6 +23,7 @@ import { CopyrightsService } from './copyrights.service';
  *   PATCH  /api/copyrights/:id   更新
  *   DELETE /api/copyrights/:id   删除
  */
+@UseGuards(JwtAuthGuard)
 @Controller('copyrights')
 export class CopyrightsController {
   constructor(private readonly copyrightsService: CopyrightsService) {}

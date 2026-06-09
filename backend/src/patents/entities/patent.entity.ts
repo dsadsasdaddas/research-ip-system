@@ -13,42 +13,42 @@ import {
 @Entity('patent')
 export class Patent {
   @PrimaryGeneratedColumn({ comment: '主键ID,自增' })
-  id: number;
+  id!: number;
 
   // ========== 基础字段(§3.1.2)==========
 
   @Column({ length: 500, comment: '专利名称' })
-  name: string;
+  name!: string;
 
   @Column({ type: 'text', nullable: true, comment: '院内发明人' })
-  inventors: string;
+  inventors!: string | null;
 
   @Column({ name: 'outer_inventors', type: 'text', nullable: true, comment: '外单位发明人' })
-  outerInventors: string;
+  outerInventors!: string | null;
 
-  @Column({ length: 255, nullable: true, comment: '专利权人' })
-  patentee: string;
+  @Column({ type: 'varchar', length: 255, nullable: true, comment: '专利权人' })
+  patentee!: string | null;
 
-  @Column({ name: 'application_no', length: 100, nullable: true, comment: '申请号' })
-  applicationNo: string;
+  @Column({ type: 'varchar', name: 'application_no', length: 100, nullable: true, comment: '申请号' })
+  applicationNo!: string | null;
 
-  @Column({ name: 'grant_no', length: 100, nullable: true, comment: '授权号' })
-  grantNo: string;
+  @Column({ type: 'varchar', name: 'grant_no', length: 100, nullable: true, comment: '授权号' })
+  grantNo!: string | null;
 
-  @Column({ name: 'filing_date', length: 20, nullable: true, comment: '申请日' })
-  filingDate: string;
+  @Column({ type: 'varchar', name: 'filing_date', length: 20, nullable: true, comment: '申请日' })
+  filingDate!: string | null;
 
-  @Column({ name: 'grant_date', length: 20, nullable: true, comment: '授权日' })
-  grantDate: string;
+  @Column({ type: 'varchar', name: 'grant_date', length: 20, nullable: true, comment: '授权日' })
+  grantDate!: string | null;
 
-  @Column({ name: 'patent_type', length: 50, nullable: true, comment: '专利类型:发明/实用新型/外观设计/PCT' })
-  patentType: string;
+  @Column({ type: 'varchar', name: 'patent_type', length: 50, nullable: true, comment: '专利类型:发明/实用新型/外观设计/PCT' })
+  patentType!: string | null;
 
-  @Column({ length: 50, nullable: true, default: '中国', comment: '国别' })
-  country: string;
+  @Column({ type: 'varchar', length: 50, nullable: true, default: '中国', comment: '国别' })
+  country!: string | null;
 
-  @Column({ name: 'next_fee_date', length: 20, nullable: true, comment: '年费下次缴费日' })
-  nextFeeDate: string;
+  @Column({ type: 'varchar', name: 'next_fee_date', length: 20, nullable: true, comment: '年费下次缴费日' })
+  nextFeeDate!: string | null;
 
   @Column({
     name: 'fee_amount',
@@ -58,45 +58,45 @@ export class Patent {
     nullable: true,
     comment: '年费金额',
   })
-  feeAmount: number;
+  feeAmount!: number | null;
 
-  @Column({ length: 255, nullable: true, comment: '代理机构' })
-  agency: string;
+  @Column({ type: 'varchar', length: 255, nullable: true, comment: '代理机构' })
+  agency!: string | null;
 
-  @Column({ name: 'legal_status', length: 50, default: '申请中', comment: '法律状态:申请中/授权/失效/驳回' })
-  legalStatus: string;
+  @Column({ type: 'varchar', name: 'legal_status', length: 50, default: '申请中', comment: '法律状态:申请中/授权/失效/驳回' })
+  legalStatus!: string | null;
 
   // ========== 扩展字段(§3.1.2)==========
 
-  @Column({ name: 'pct_stage', length: 100, nullable: true, comment: 'PCT国际阶段' })
-  pctStage: string;
+  @Column({ type: 'varchar', name: 'pct_stage', length: 100, nullable: true, comment: 'PCT国际阶段' })
+  pctStage!: string | null;
 
-  @Column({ name: 'national_stage', length: 100, nullable: true, comment: '国家阶段' })
-  nationalStage: string;
+  @Column({ type: 'varchar', name: 'national_stage', length: 100, nullable: true, comment: '国家阶段' })
+  nationalStage!: string | null;
 
-  @Column({ name: 'entry_date', length: 20, nullable: true, comment: '国际进入日期' })
-  entryDate: string;
+  @Column({ type: 'varchar', name: 'entry_date', length: 20, nullable: true, comment: '国际进入日期' })
+  entryDate!: string | null;
 
-  @Column({ name: 'patent_mark', length: 50, default: '普通专利', comment: '专利标识:普通专利/国防专利/涉密专利' })
-  patentMark: string;
+  @Column({ type: 'varchar', name: 'patent_mark', length: 50, default: '普通专利', comment: '专利标识:普通专利/国防专利/涉密专利' })
+  patentMark!: string | null;
 
-  @Column({ name: 'depend_project', length: 255, nullable: true, comment: '课题依托项目' })
-  dependProject: string;
+  @Column({ type: 'varchar', name: 'depend_project', length: 255, nullable: true, comment: '课题依托项目' })
+  dependProject!: string | null;
 
-  @Column({ name: 'fund_source', length: 100, nullable: true, comment: '经费来源' })
-  fundSource: string;
+  @Column({ type: 'varchar', name: 'fund_source', length: 100, nullable: true, comment: '经费来源' })
+  fundSource!: string | null;
 
   // ========== 归属与审计(§6.2 + §2 部门数据隔离)==========
 
-  @Column({ name: 'secret_level', length: 20, default: '公开', comment: '密级:公开/内部/涉密' })
-  secretLevel: string;
+  @Column({ type: 'varchar', name: 'secret_level', length: 20, default: '公开', comment: '密级:公开/内部/涉密' })
+  secretLevel!: string | null;
 
   @Column({ name: 'dept_id', type: 'int', nullable: true, comment: '所属部门ID(用于部门数据隔离)' })
-  deptId: number;
+  deptId!: number | null;
 
-  @Column({ name: 'create_user', length: 100, nullable: true, comment: '登记人' })
-  createUser: string;
+  @Column({ type: 'varchar', name: 'create_user', length: 100, nullable: true, comment: '登记人' })
+  createUser!: string | null;
 
   @CreateDateColumn({ name: 'create_time', comment: '创建时间(自动填)' })
-  createTime: Date;
+  createTime!: Date;
 }
