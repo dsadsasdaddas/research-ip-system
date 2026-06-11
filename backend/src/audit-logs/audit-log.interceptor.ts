@@ -25,6 +25,11 @@ const MODULE_MAP: Record<string, string> = {
   papers: 'papers', patents: 'patents', copyrights: 'copyrights',
   transforms: 'transforms', fees: 'fees', reminders: 'reminders',
   attachments: 'attachments', users: 'users', departments: 'departments',
+  'audit-logs': 'audit-logs', 'search-logs': 'search-logs',
+  notifications: 'notifications', approvals: 'approvals',
+  reports: 'reports', rbac: 'rbac', integrations: 'integrations',
+  dictionaries: 'dictionaries', 'secret-access': 'secret-access',
+  backup: 'backup',
 };
 
 function guessModule(path: string): string {

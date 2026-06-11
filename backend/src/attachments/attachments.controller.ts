@@ -64,6 +64,20 @@ export class AttachmentsController {
     stream.pipe(res);
   }
 
+  @Get(':id/versions')
+  getVersions(@Param('id') id: string) {
+    return this.svc.getVersions(+id);
+  }
+
+  @Get(':id/access-logs')
+  getAccessLogs(
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.svc.getAccessLogs(+id, page ? +page : undefined, pageSize ? +pageSize : undefined);
+  }
+
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
     const att = await this.svc.findOne(id);

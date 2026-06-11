@@ -6,9 +6,13 @@ import { Copyright } from '../copyrights/entities/copyright.entity';
 import { SearchService } from './search.service';
 import { SearchController } from './search.controller';
 import { RustSearchAdapter } from './rust-search-adapter';
+import { SearchLogsModule } from '../search-logs/search-logs.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Paper, Patent, Copyright])],
+  imports: [
+    TypeOrmModule.forFeature([Paper, Patent, Copyright]),
+    SearchLogsModule,
+  ],
   providers: [SearchService, RustSearchAdapter],
   controllers: [SearchController],
 })
