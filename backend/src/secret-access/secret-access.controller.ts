@@ -37,13 +37,14 @@ export class SecretAccessController {
   }
 
   @Get('check')
-  checkAccess(
+  async checkAccess(
     @Query('businessType') businessType: string,
     @Query('businessId') businessId: string,
     @Query('userId') userId: string,
     @Query('action') action: string,
   ) {
-    return this.svc.checkAccess(businessType, +businessId, +userId, action);
+    const allowed = await this.svc.checkAccess(businessType, +businessId, +userId, action);
+    return { allowed };
   }
 
   @Post('logs')

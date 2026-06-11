@@ -402,12 +402,14 @@ export class ApprovalsService {
 
   /** 更新业务表的审批状态 */
   private async updateBusinessStatus(businessType: string, businessId: number, status: string): Promise<void> {
-    await this.dataSource.createQueryRunner().manager
-      .createQueryBuilder()
-      .update(businessType)
-      .set({ approval_status: status })
-      .where('id = :id', { id: businessId })
-      .execute();
+    // businessType 已由 SubmitApprovalDto 的 @IsIn 白名单约束，仅可为
+    // paper/patent/copyright/transform/fee/secret，无 SQL 注入风险。
+    // 使用参数化原生 SQL，避免 QueryBuilder 对实体属性名(camelCase)与
+    // 列名(snake_case)映射的依赖问题。
+    await this.dataSource.query(
+      `UPDATE \`${businessType}\` SET approval_status = ? WHERE id = ?`,
+      [status, businessId],
+    );
   }
 
   /** 验证当前用户是否为该节点的审批人 */

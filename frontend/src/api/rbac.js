@@ -7,5 +7,5 @@ export default {
   listPermissions: (params) => http.get('/rbac/permissions', { params }),
   createPermission: (data) => http.post('/rbac/permissions', data),
   getRolePermissions: (roleCode) => http.get(`/rbac/roles/${roleCode}/permissions`),
-  assignPermissions: (roleCode, permissionCodes) => http.post(`/rbac/roles/${roleCode}/permissions`, { permissionCodes }),
+  assignPermissions: (roleCode, permissionCodes) => http.post('/rbac/assign-permissions', { roleCode, permissionCodes }),
 }

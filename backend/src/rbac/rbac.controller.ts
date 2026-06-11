@@ -64,7 +64,8 @@ export class RbacController {
   }
 
   @Get('check-permission')
-  checkPermission(@Query('roleCode') roleCode: string, @Query('permissionCode') permissionCode: string) {
-    return this.svc.checkPermission(roleCode, permissionCode);
+  async checkPermission(@Query('roleCode') roleCode: string, @Query('permissionCode') permissionCode: string) {
+    const allowed = await this.svc.checkPermission(roleCode, permissionCode);
+    return { allowed };
   }
 }
