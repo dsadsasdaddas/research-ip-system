@@ -11,6 +11,11 @@ import IntegrationsView from '../views/IntegrationsView.vue'
 import UsersView from '../views/UsersView.vue'
 import DepartmentsView from '../views/DepartmentsView.vue'
 import DictionariesView from '../views/DictionariesView.vue'
+import NotificationsView from '../views/NotificationsView.vue'
+import ApprovalsView from '../views/ApprovalsView.vue'
+import ReportsView from '../views/ReportsView.vue'
+import RbacView from '../views/RbacView.vue'
+import BackupView from '../views/BackupView.vue'
 import paper from '../modules/paper'
 import patent from '../modules/patent'
 import copyright from '../modules/copyright'
@@ -32,10 +37,18 @@ const routes = [
       { path: 'search',     component: SearchView,   meta: { title: '全文检索' } },
       { path: 'dashboard',  component: DashboardView,meta: { title: '统计看板' } },
       { path: 'audit-logs', component: AuditLogView, meta: { title: '操作日志' } },
+      // 工作流
+      { path: 'notifications', component: NotificationsView, meta: { title: '通知中心' } },
+      { path: 'approvals',     component: ApprovalsView,     meta: { title: '审批管理' } },
+      // 数据
+      { path: 'reports',       component: ReportsView,       meta: { title: '报表中心' } },
+      // 系统管理
       { path: 'users', component: UsersView, meta: { title: '用户管理', sysAdminOnly: true } },
       { path: 'departments', component: DepartmentsView, meta: { title: '部门管理', sysAdminOnly: true } },
       { path: 'dictionaries', component: DictionariesView, meta: { title: '数据字典', sysAdminOnly: true } },
       { path: 'integrations', component: IntegrationsView, meta: { title: '接口配置中心', sysAdminOnly: true } },
+      { path: 'rbac',         component: RbacView,         meta: { title: 'RBAC权限', sysAdminOnly: true } },
+      { path: 'backup',       component: BackupView,       meta: { title: '备份管理', sysAdminOnly: true } },
     ],
   },
 ]

@@ -9,6 +9,7 @@ export default {
   entityName: '软著',
   searchPlaceholder: '按软著名称搜索',
   newButtonText: '新增软著',
+  resourcePath: 'copyrights',
   api: createCrudApi('copyrights'),
 
   columns: [
