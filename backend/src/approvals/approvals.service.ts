@@ -402,10 +402,14 @@ export class ApprovalsService {
 
   /** 更新业务表的审批状态 */
   private async updateBusinessStatus(businessType: string, businessId: number, status: string): Promise<void> {
-    // businessType 已由 SubmitApprovalDto 的 @IsIn 白名单约束，仅可为
-    // paper/patent/copyright/transform/fee/secret，无 SQL 注入风险。
-    // 使用参数化原生 SQL，避免 QueryBuilder 对实体属性名(camelCase)与
-    // 列名(snake_case)映射的依赖问题。
+    // 深度防御:businessType 拼入 SQL,即便入口 SubmitApprovalDto 已用 @IsIn 校验,
+    // 此处仍做白名单兜底,防止未来新增调用点绕过校验。
+    const allowedTypes = ['paper', 'patent', 'copyright', 'transform', 'fee', 'secret'];
+    if (!allowedTypes.includes(businessType)) {
+      throw new BadRequestException(`非法的业务类型: ${businessType}`);
+    }
+    // 其余参数用占位符,无注入风险;原生 SQL 避开 QueryBuilder 的
+    // 实体属性名(camelCase)与列名(snake_case)映射问题。
     await this.dataSource.query(
       `UPDATE \`${businessType}\` SET approval_status = ? WHERE id = ?`,
       [status, businessId],

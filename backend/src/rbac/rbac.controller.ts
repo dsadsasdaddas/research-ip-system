@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards,
 } from '@nestjs/common';
 import { RbacService } from './rbac.service';
@@ -65,6 +66,10 @@ export class RbacController {
 
   @Get('check-permission')
   async checkPermission(@Query('roleCode') roleCode: string, @Query('permissionCode') permissionCode: string) {
+    // 参数缺失时 TypeORM 会忽略该条件导致 count 恒 > 0 → 权限绕过,必须先校验
+    if (!roleCode || !permissionCode) {
+      throw new BadRequestException('roleCode 和 permissionCode 不能为空');
+    }
     const allowed = await this.svc.checkPermission(roleCode, permissionCode);
     return { allowed };
   }

@@ -446,6 +446,13 @@ describe('New Modules (e2e)', () => {
       expect(res.status).toBe(200);
       expect(res.body.allowed).toBe(false);
     });
+
+    it('check-permission 缺参 → 400(防止空条件绕过)', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/rbac/check-permission')
+        .set(auth(adminToken));
+      expect(res.status).toBe(400);
+    });
   });
 
   // ================================================================
@@ -460,6 +467,13 @@ describe('New Modules (e2e)', () => {
         .get('/api/secret-access/grants')
         .set(auth(csUserToken));
       expect(res.status).toBe(403);
+    });
+
+    it('check 缺参 → 400(防止跨业务类型越权)', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/secret-access/check')
+        .set(auth(secretToken));
+      expect(res.status).toBe(400);
     });
 
     it('secret_admin 授权 + 查询 + 校验 + 撤销', async () => {
