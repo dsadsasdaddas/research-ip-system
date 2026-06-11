@@ -14,6 +14,8 @@ import { CreateTransformDto } from './dto/create-transform.dto';
 import { UpdateTransformDto } from './dto/update-transform.dto';
 import { TransformsService } from './transforms.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthUser } from '../auth/types/auth-user.interface';
 
 /**
  * 成果转化 REST 接口:
@@ -29,27 +31,27 @@ export class TransformsController {
   constructor(private readonly svc: TransformsService) {}
 
   @Post()
-  create(@Body() dto: CreateTransformDto) {
-    return this.svc.create(dto);
+  create(@Body() dto: CreateTransformDto, @CurrentUser() user: AuthUser) {
+    return this.svc.create(dto, user);
   }
 
   @Get()
-  findAll(@Query('keyword') keyword?: string) {
-    return this.svc.findAll(keyword);
+  findAll(@Query('keyword') keyword?: string, @CurrentUser() user?: AuthUser) {
+    return this.svc.findAll(keyword, user);
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.svc.findOne(id);
+  findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.svc.findOne(id, user);
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTransformDto) {
-    return this.svc.update(id, dto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTransformDto, @CurrentUser() user: AuthUser) {
+    return this.svc.update(id, dto, user);
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.svc.remove(id);
+  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.svc.remove(id, user);
   }
 }

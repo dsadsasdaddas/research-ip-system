@@ -49,8 +49,12 @@ export class UsersService {
   async update(id: number, dto: UpdateUserDto): Promise<PublicUser> {
     const user = await this.findById(id);
     if (dto.deptId !== undefined && dto.deptId !== null) await this.ensureDeptExists(dto.deptId);
-    if (dto.password) {
+    if (dto.password != null) {
+      if (dto.password === '') throw new BadRequestException('密码不能为空');
       dto.password = await bcrypt.hash(dto.password, 10);
+    } else {
+      // password 为 null/undefined 时不更新密码字段
+      delete (dto as Partial<UpdateUserDto>).password;
     }
     Object.assign(user, dto);
     const saved = await this.repo.save(user);

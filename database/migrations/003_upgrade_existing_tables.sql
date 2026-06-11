@@ -78,4 +78,10 @@ CALL add_column_if_missing(@db, 'fee', 'approval_status', 'VARCHAR(30) NOT NULL 
 -- reminder_rule
 CALL add_column_if_missing(@db, 'reminder_rule', 'update_time', 'DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT ''更新时间''');
 
+-- audit_log: TypeORM 早期自动建表使用 realName/requestBody/statusCode，
+-- 正式 schema 使用 real_name/body/status_code。保留旧列，补齐正式列。
+CALL add_column_if_missing(@db, 'audit_log', 'real_name', 'VARCHAR(100) NULL COMMENT ''操作人真名''');
+CALL add_column_if_missing(@db, 'audit_log', 'body', 'TEXT NULL COMMENT ''请求体脱敏''');
+CALL add_column_if_missing(@db, 'audit_log', 'status_code', 'INT NULL COMMENT ''响应状态码''');
+
 DROP PROCEDURE IF EXISTS add_column_if_missing;

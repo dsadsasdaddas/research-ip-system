@@ -16,7 +16,7 @@ export class AuthService {
     const match = await bcrypt.compare(password, user.password);
     if (!match) throw new UnauthorizedException('用户名或密码错误');
 
-    const payload = { sub: user.id, username: user.username, role: user.role, deptId: user.deptId };
+    const payload = { sub: user.id, username: user.username, realName: user.realName, role: user.role, deptId: user.deptId };
     return {
       token: this.jwtService.sign(payload),
       user: { id: user.id, username: user.username, realName: user.realName, role: user.role, deptId: user.deptId },

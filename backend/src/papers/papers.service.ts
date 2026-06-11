@@ -1,11 +1,13 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Like, Repository } from 'typeorm';
+import { FindOptionsWhere, In, Like, Repository } from 'typeorm';
 import { CreatePaperDto } from './dto/create-paper.dto';
 import { UpdatePaperDto } from './dto/update-paper.dto';
 import { Paper } from './entities/paper.entity';
 import type { AuthUser } from '../auth/types/auth-user.interface';
 import { getDeptFilter } from '../common/utils/dept-filter';
+import { getSecretLevels } from '../common/utils/secret-filter';
+import { escapeLike } from '../common/utils/escape-like';
 
 /**
  * 论文业务逻辑:真正读写数据库的地方。
@@ -19,39 +21,55 @@ export class PapersService {
   ) {}
 
   /** 新增论文 */
-  create(dto: CreatePaperDto) {
-    const paper = this.paperRepo.create(dto); // DTO -> 实体对象
+  create(dto: CreatePaperDto, user: AuthUser) {
+    const paper = this.paperRepo.create({
+      ...dto,
+      deptId: user.deptId ?? null,
+      createUser: user.username,
+    }); // DTO -> 实体对象
     return this.paperRepo.save(paper); // 存入数据库
   }
 
-  /** 查询列表;传了 keyword 就按标题模糊搜；部门隔离角色只返回本部门数据 */
+  /** 查询列表;传了 keyword 就按标题模糊搜；部门隔离角色只返回本部门数据；按密级过滤 */
   findAll(keyword?: string, user?: AuthUser): Promise<Paper[]> {
     const deptId = user ? getDeptFilter(user) : undefined;
+    const allowedLevels = user ? getSecretLevels(user) : ['公开'];
     const where: FindOptionsWhere<Paper> = {};
     if (deptId != null) where.deptId = deptId;
-    if (keyword) where.title = Like(`%${keyword}%`);
-    return this.paperRepo.find({ where, order: { createTime: 'DESC' } });
+    if (keyword) where.title = Like(`%${escapeLike(keyword)}%`);
+    where.secretLevel = In(allowedLevels);
+    return this.paperRepo.find({ where, order: { createTime: 'DESC' }, take: 500 });
   }
 
-  /** 查单条;不存在抛 404 */
-  async findOne(id: number) {
+  /** 查单条;不存在抛 404；检查密级权限 */
+  async findOne(id: number, user?: AuthUser) {
     const paper = await this.paperRepo.findOne({ where: { id } });
     if (!paper) {
       throw new NotFoundException(`论文 #${id} 不存在`);
+    }
+    if (user) {
+      const allowedLevels = getSecretLevels(user);
+      const deptId = getDeptFilter(user);
+      if (!allowedLevels.includes(paper.secretLevel ?? '公开') || (deptId != null && paper.deptId !== deptId)) {
+        throw new NotFoundException(`论文 #${id} 不存在`);
+      }
     }
     return paper;
   }
 
   /** 更新 */
-  async update(id: number, dto: UpdatePaperDto) {
-    const paper = await this.findOne(id); // 先确认存在
-    Object.assign(paper, dto); // 合并改动
+  async update(id: number, dto: UpdatePaperDto, user?: AuthUser) {
+    const paper = await this.findOne(id, user); // 先确认存在并校验权限
+    const { deptId: ignoredDeptId, createUser: ignoredCreateUser, ...safeDto } = dto;
+    void ignoredDeptId;
+    void ignoredCreateUser;
+    Object.assign(paper, safeDto); // 合并改动，归属字段不接受前端覆盖
     return this.paperRepo.save(paper);
   }
 
   /** 删除 */
-  async remove(id: number) {
-    const paper = await this.findOne(id);
+  async remove(id: number, user?: AuthUser) {
+    const paper = await this.findOne(id, user);
     await this.paperRepo.remove(paper);
     return { deleted: true, id };
   }

@@ -62,11 +62,13 @@ export class FeesService {
   ) {}
 
   async create(dto: CreateFeeDto, user: AuthUser): Promise<FeeWithAlert> {
+    const { deptId: ignoredDeptId, ...safeDto } = dto;
+    void ignoredDeptId;
     const fee = this.repo.create({
-      ...dto,
+      ...safeDto,
       payStatus: dto.payStatus ?? 'pending',
       createUser: user.username,
-      deptId: dto.deptId ?? user.deptId ?? null,
+      deptId: user.deptId ?? null,
     });
     return withAlert(await this.repo.save(fee));
   }
@@ -95,7 +97,9 @@ export class FeesService {
   }
 
   async update(id: number, dto: UpdateFeeDto): Promise<FeeWithAlert | null> {
-    await this.repo.update(id, dto);
+    const { deptId: ignoredDeptId, ...safeDto } = dto;
+    void ignoredDeptId;
+    await this.repo.update(id, safeDto);
     return this.findOne(id);
   }
 
@@ -122,10 +126,13 @@ export class FeesService {
     };
   }
 
-  async generatePlansFromPatents(patents: PatentForPlan[]): Promise<{ generated: number }> {
+  async generatePlansFromPatents(patents: PatentForPlan[], user: AuthUser): Promise<{ generated: number }> {
+    const userDeptId = getDeptFilter(user);
     let created = 0;
     for (const p of patents) {
       if (!p.nextFeeDate) continue;
+      // 部门隔离：非全院用户只能为本部门专利生成缴费计划
+      if (userDeptId != null && p.deptId !== userDeptId) continue;
       const exists = await this.repo.findOne({
         where: { relationType: 'patent', relationId: p.id, dueDate: p.nextFeeDate },
       });

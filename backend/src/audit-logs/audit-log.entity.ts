@@ -15,7 +15,7 @@ export class AuditLog {
   @Column({ type: 'varchar', length: 100, nullable: true, comment: '操作人用户名' })
   username!: string | null;
 
-  @Column({ type: 'varchar', length: 100, nullable: true, comment: '操作人真名' })
+  @Column({ name: 'real_name', type: 'varchar', length: 100, nullable: true, comment: '操作人真名' })
   realName!: string | null;
 
   @Column({ type: 'varchar', length: 20, nullable: true, comment: 'HTTP 方法 POST/PATCH/DELETE' })
@@ -30,10 +30,10 @@ export class AuditLog {
   @Column({ type: 'varchar', length: 50, nullable: true, comment: '操作动作 create/update/delete' })
   action!: string | null;
 
-  @Column({ type: 'text', nullable: true, comment: '请求体(脱敏)' })
+  @Column({ name: 'body', type: 'text', nullable: true, comment: '请求体(脱敏)' })
   requestBody!: string | null;
 
-  @Column({ type: 'int', nullable: true, comment: 'HTTP 响应状态码' })
+  @Column({ name: 'status_code', type: 'int', nullable: true, comment: 'HTTP 响应状态码' })
   statusCode!: number | null;
 
   @Column({ type: 'varchar', length: 50, nullable: true, comment: '客户端 IP' })

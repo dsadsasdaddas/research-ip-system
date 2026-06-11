@@ -14,6 +14,8 @@ import { CreatePatentDto } from './dto/create-patent.dto';
 import { UpdatePatentDto } from './dto/update-patent.dto';
 import { PatentsService } from './patents.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthUser } from '../auth/types/auth-user.interface';
 
 /**
  * 专利 REST 接口(全局前缀 /api,故实际路径):
@@ -29,27 +31,27 @@ export class PatentsController {
   constructor(private readonly patentsService: PatentsService) {}
 
   @Post()
-  create(@Body() dto: CreatePatentDto) {
-    return this.patentsService.create(dto);
+  create(@Body() dto: CreatePatentDto, @CurrentUser() user: AuthUser) {
+    return this.patentsService.create(dto, user);
   }
 
   @Get()
-  findAll(@Query('keyword') keyword?: string) {
-    return this.patentsService.findAll(keyword);
+  findAll(@Query('keyword') keyword?: string, @CurrentUser() user?: AuthUser) {
+    return this.patentsService.findAll(keyword, user);
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.patentsService.findOne(id);
+  findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.patentsService.findOne(id, user);
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePatentDto) {
-    return this.patentsService.update(id, dto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePatentDto, @CurrentUser() user: AuthUser) {
+    return this.patentsService.update(id, dto, user);
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.patentsService.remove(id);
+  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.patentsService.remove(id, user);
   }
 }

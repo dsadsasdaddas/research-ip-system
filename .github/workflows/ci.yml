@@ -25,8 +25,67 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: npm ci
+        run: npm install
 
       - name: Run backend CI
         working-directory: backend
         run: npm run ci
+
+  backend-e2e:
+    name: Backend e2e with formal MySQL schema
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root1234
+          MYSQL_DATABASE: research_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot1234"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '25'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install MySQL client
+        run: sudo apt-get update && sudo apt-get install -y default-mysql-client
+
+      - name: Import formal schema
+        run: mysql -h 127.0.0.1 -uroot -proot1234 research_db < database/schema.sql
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm install
+
+      - name: Build Rust search addon
+        working-directory: backend
+        run: npm run build:rust-search
+
+      - name: Run backend e2e
+        working-directory: backend
+        env:
+          PORT: 3001
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USER: root
+          DB_PASSWORD: root1234
+          DB_NAME: research_db
+          JWT_SECRET: research-mis-secret-2024
+          TYPEORM_SYNC: 'false'
+        run: npm run test:e2e -- --runInBand test/bugfixes.e2e-spec.ts

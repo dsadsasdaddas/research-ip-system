@@ -6,6 +6,7 @@ import { Patent } from '../patents/entities/patent.entity';
 import { Copyright } from '../copyrights/entities/copyright.entity';
 import type { AuthUser } from '../auth/types/auth-user.interface';
 import { getDeptFilter } from '../common/utils/dept-filter';
+import { getSecretLevels } from '../common/utils/secret-filter';
 import { RustSearchAdapter, RustSearchDoc, RustSearchDocType } from './rust-search-adapter';
 
 export interface SearchResultItem {
@@ -75,25 +76,30 @@ export class SearchService {
 
   private async loadIndexedItems(types: string[], user: AuthUser): Promise<IndexedSearchItem[]> {
     const deptId = getDeptFilter(user);
+    const allowedLevels = getSecretLevels(user);
     const items: IndexedSearchItem[] = [];
+    const MAX_ROWS = 10000;
 
     if (isRequestedType(types, 'paper')) {
-      const qb = this.paperRepo.createQueryBuilder('p').orderBy('p.publish_year', 'DESC');
+      const qb = this.paperRepo.createQueryBuilder('p').orderBy('p.publish_year', 'DESC').limit(MAX_ROWS);
       if (deptId != null) qb.andWhere('p.dept_id = :did', { did: deptId });
+      qb.andWhere('p.secret_level IN (:...levels)', { levels: allowedLevels });
       const rows = await qb.getMany();
       rows.forEach((row) => items.push(this.indexPaper(row)));
     }
 
     if (isRequestedType(types, 'patent')) {
-      const qb = this.patentRepo.createQueryBuilder('p').orderBy('p.filing_date', 'DESC');
+      const qb = this.patentRepo.createQueryBuilder('p').orderBy('p.filing_date', 'DESC').limit(MAX_ROWS);
       if (deptId != null) qb.andWhere('p.dept_id = :did', { did: deptId });
+      qb.andWhere('p.secret_level IN (:...levels)', { levels: allowedLevels });
       const rows = await qb.getMany();
       rows.forEach((row) => items.push(this.indexPatent(row)));
     }
 
     if (isRequestedType(types, 'copyright')) {
-      const qb = this.copyrightRepo.createQueryBuilder('c').orderBy('c.register_date', 'DESC');
+      const qb = this.copyrightRepo.createQueryBuilder('c').orderBy('c.register_date', 'DESC').limit(MAX_ROWS);
       if (deptId != null) qb.andWhere('c.dept_id = :did', { did: deptId });
+      qb.andWhere('c.secret_level IN (:...levels)', { levels: allowedLevels });
       const rows = await qb.getMany();
       rows.forEach((row) => items.push(this.indexCopyright(row)));
     }

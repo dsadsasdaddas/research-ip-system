@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 /** 附件表：关联论文/专利/软著/转化/费用凭证 */
 @Entity('attachment')
@@ -6,7 +6,7 @@ export class Attachment {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ type: 'varchar', name: 'relation_type', length: 50, nullable: true, comment: 'paper/patent/copyright/transform/fee' })
+  @Column({ type: 'varchar', name: 'relation_type', length: 50, nullable: true, comment: 'paper/patent/copyright/transform/fee/approval' })
   relationType!: string | null;
 
   @Column({ name: 'relation_id', type: 'int', nullable: true, comment: '关联业务ID' })
@@ -33,9 +33,21 @@ export class Attachment {
   @Column({ type: 'varchar', name: 'upload_user', length: 100, nullable: true })
   uploadUser!: string | null;
 
+  @Column({ type: 'varchar', name: 'secret_level', length: 20, default: '公开', comment: '附件密级' })
+  secretLevel!: string;
+
+  @Column({ type: 'varchar', name: 'storage_mode', length: 30, default: 'local', comment: '存储模式:local/encrypted/oss' })
+  storageMode!: string;
+
+  @Column({ type: 'varchar', name: 'download_permission', length: 100, nullable: true, comment: '下载权限策略' })
+  downloadPermission!: string | null;
+
   @Column({ type: 'varchar', nullable: true })
   remark!: string | null;
 
   @CreateDateColumn({ name: 'create_time' })
   createTime!: Date;
+
+  @UpdateDateColumn({ name: 'update_time' })
+  updateTime!: Date;
 }
