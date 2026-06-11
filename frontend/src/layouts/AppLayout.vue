@@ -13,6 +13,7 @@ const auth     = useAuthStore()
 const collapsed = ref(false)
 const activeMenu = computed(() => route.path)
 const pageTitle  = computed(() => route.meta.title || '')
+const isSysAdmin = computed(() => auth.user?.role === 'sys_admin')
 
 function logout() { auth.logout(); router.push('/login') }
 </script>
@@ -38,7 +39,13 @@ function logout() { auth.logout(); router.push('/login') }
         <el-menu-item index="/search"><el-icon><Search /></el-icon><span>全文检索</span></el-menu-item>
         <el-menu-item index="/dashboard"><el-icon><DataAnalysis /></el-icon><span>统计看板</span></el-menu-item>
         <el-menu-item index="/audit-logs"><el-icon><List /></el-icon><span>操作日志</span></el-menu-item>
-        <el-menu-item index="/integrations"><el-icon><Setting /></el-icon><span>接口配置</span></el-menu-item>
+
+        <el-sub-menu v-if="isSysAdmin" index="sys">
+          <template #title><el-icon><Setting /></el-icon><span>系统管理</span></template>
+          <el-menu-item index="/users"><el-icon><Setting /></el-icon><span>用户管理</span></el-menu-item>
+          <el-menu-item index="/departments"><el-icon><Setting /></el-icon><span>部门管理</span></el-menu-item>
+          <el-menu-item index="/integrations"><el-icon><Setting /></el-icon><span>接口配置</span></el-menu-item>
+        </el-sub-menu>
       </el-menu>
     </el-aside>
 

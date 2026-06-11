@@ -8,6 +8,8 @@ import RemindersView from '../views/RemindersView.vue'
 import SearchView from '../views/SearchView.vue'
 import AuditLogView from '../views/AuditLogView.vue'
 import IntegrationsView from '../views/IntegrationsView.vue'
+import UsersView from '../views/UsersView.vue'
+import DepartmentsView from '../views/DepartmentsView.vue'
 import paper from '../modules/paper'
 import patent from '../modules/patent'
 import copyright from '../modules/copyright'
@@ -29,7 +31,9 @@ const routes = [
       { path: 'search',     component: SearchView,   meta: { title: '全文检索' } },
       { path: 'dashboard',  component: DashboardView,meta: { title: '统计看板' } },
       { path: 'audit-logs', component: AuditLogView, meta: { title: '操作日志' } },
-      { path: 'integrations', component: IntegrationsView, meta: { title: '接口配置中心' } },
+      { path: 'users', component: UsersView, meta: { title: '用户管理', sysAdminOnly: true } },
+      { path: 'departments', component: DepartmentsView, meta: { title: '部门管理', sysAdminOnly: true } },
+      { path: 'integrations', component: IntegrationsView, meta: { title: '接口配置中心', sysAdminOnly: true } },
     ],
   },
 ]
@@ -39,6 +43,10 @@ const router = createRouter({ history: createWebHistory(), routes })
 router.beforeEach((to) => {
   const token = localStorage.getItem('token')
   if (!to.meta.public && !token) return '/login'
+  if (to.meta.sysAdminOnly) {
+    const user = JSON.parse(localStorage.getItem('user') || 'null')
+    if (user?.role !== 'sys_admin') return '/'
+  }
 })
 
 export default router

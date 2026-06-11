@@ -377,12 +377,26 @@ totals / trend / typeDist / deptRank / patentStatus / transformAmounts / funnel
 | 方法 | 路径 | 说明 | 角色 |
 |---|---|---|---|
 | GET | `/api/users` | 用户列表 | `sys_admin` |
+| GET | `/api/users/:id` | 用户详情 | `sys_admin` |
 | POST | `/api/users` | 新增用户 | `sys_admin` |
 | PATCH | `/api/users/:id` | 更新用户 | `sys_admin` |
+| DELETE | `/api/users/:id` | 删除用户 | `sys_admin` |
 
+返回用户对象不包含密码哈希。
 
+### 8.11 部门管理
 
-### 8.11 外部接口配置中心
+| 方法 | 路径 | 说明 | 角色 |
+|---|---|---|---|
+| GET | `/api/departments` | 部门列表，可传 `keyword` | `sys_admin` |
+| GET | `/api/departments/:id` | 部门详情 | `sys_admin` |
+| POST | `/api/departments` | 新增部门 | `sys_admin` |
+| PATCH | `/api/departments/:id` | 更新部门 | `sys_admin` |
+| DELETE | `/api/departments/:id` | 删除部门 | `sys_admin` |
+
+前端页面：`/users`、`/departments`，仅系统管理员可见。
+
+### 8.12 外部接口配置中心
 
 > 用于落地 Crossref / Scopus / OpenAlex / CNIPA / HR-LDAP / 财务 / 邮件 / 短信等外部系统接入要求。接口配置只保存环境变量名，不直接保存密钥。
 
@@ -390,7 +404,9 @@ totals / trend / typeDist / deptRank / patentStatus / transformAmounts / funnel
 |---|---|---|---|
 | GET | `/api/integrations/configs` | 查看接口配置列表 | `sys_admin` |
 | POST | `/api/integrations/configs` | 新增接口配置 | `sys_admin` |
+| GET | `/api/integrations/configs/:id` | 接口配置详情 | `sys_admin` |
 | PATCH | `/api/integrations/configs/:id` | 更新接口配置 | `sys_admin` |
+| DELETE | `/api/integrations/configs/:id` | 删除接口配置 | `sys_admin` |
 | POST | `/api/integrations/configs/:id/test` | 测试接口连通性，带超时和重试 | `sys_admin` |
 | GET | `/api/integrations/logs` | 查看接口调用/测试日志 | `sys_admin` |
 
@@ -456,7 +472,7 @@ sms        短信通知
 - 当前已落地配置中心、重试、日志、降级标记；真实业务同步接口后续在对应模块内接入。
 - 前端页面已接入 `/integrations`，用于系统管理员查看、编辑、测试接口配置和查看日志。
 
-### 8.12 暂不承诺的接口
+### 8.13 暂不承诺的接口
 
 以下需求暂不定义正式接口，等实现时再补：
 

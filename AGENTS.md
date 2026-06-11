@@ -179,5 +179,5 @@ JWT_SECRET=research-mis-secret-2024
 ## 确定接口清单
 
 - 详细接口协议固定记录在 `docs/API_PROTOCOL.md`。
-- 当前确定接口包括：`auth/login`、成果登记 CRUD（papers/patents/copyrights/transforms）、`papers/doi-lookup`、Rust 搜索 `/api/search`、费用 `/api/fees`、提醒 `/api/reminders`、附件 `/api/attachments`、统计 `/api/stats`、审计日志 `/api/audit-logs`、用户管理 `/api/users`、外部接口配置中心 `/api/integrations`（前端路由 `/integrations`）。
+- 当前确定接口包括：`auth/login`、成果登记 CRUD（papers/patents/copyrights/transforms）、`papers/doi-lookup`、Rust 搜索 `/api/search`、费用 `/api/fees`、提醒 `/api/reminders`、附件 `/api/attachments`、统计 `/api/stats`、审计日志 `/api/audit-logs`、用户管理 `/api/users`、部门管理 `/api/departments`、外部接口配置中心 `/api/integrations`（前端路由 `/integrations`）。
 - 尚未实现的审批、数据字典、报表导出、备份恢复、涉密授权、检索日志接口，必须实现时再补充协议，不要临时随意命名。

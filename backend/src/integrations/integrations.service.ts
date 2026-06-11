@@ -83,6 +83,12 @@ export class IntegrationsService {
     return config;
   }
 
+  async remove(id: number): Promise<{ deleted: true; id: number }> {
+    const config = await this.findOne(id);
+    await this.configRepo.remove(config);
+    return { deleted: true, id };
+  }
+
   async test(id: number): Promise<IntegrationTestResult> {
     const config = await this.findOne(id);
     const startedAt = Date.now();

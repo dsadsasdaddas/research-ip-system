@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { PageResult } from '../common/types';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -27,6 +27,11 @@ export class IntegrationsController {
     return this.svc.create(dto);
   }
 
+  @Get('configs/:id')
+  findOne(@Param('id', ParseIntPipe) id: number): Promise<IntegrationConfig> {
+    return this.svc.findOne(id);
+  }
+
   @Patch('configs/:id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateIntegrationConfigDto): Promise<IntegrationConfig> {
     return this.svc.update(id, dto);
@@ -35,6 +40,11 @@ export class IntegrationsController {
   @Post('configs/:id/test')
   test(@Param('id', ParseIntPipe) id: number): Promise<IntegrationTestResult> {
     return this.svc.test(id);
+  }
+
+  @Delete('configs/:id')
+  remove(@Param('id', ParseIntPipe) id: number): Promise<{ deleted: true; id: number }> {
+    return this.svc.remove(id);
   }
 
   @Get('logs')

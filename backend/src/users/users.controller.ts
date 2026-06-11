@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
-import { UsersService } from './users.service';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import { UsersService, PublicUser } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -15,13 +15,27 @@ export class UsersController {
   constructor(private readonly svc: UsersService) {}
 
   @Get()
-  findAll() { return this.svc.findAll(); }
+  findAll(): Promise<PublicUser[]> {
+    return this.svc.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number): Promise<PublicUser> {
+    return this.svc.findOne(id);
+  }
 
   @Post()
-  create(@Body() dto: CreateUserDto) { return this.svc.create(dto); }
+  create(@Body() dto: CreateUserDto): Promise<PublicUser> {
+    return this.svc.create(dto);
+  }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto): Promise<PublicUser> {
     return this.svc.update(id, dto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number): Promise<{ deleted: true; id: number }> {
+    return this.svc.remove(id);
   }
 }
