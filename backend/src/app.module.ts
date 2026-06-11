@@ -18,6 +18,7 @@ import { EmailModule } from './email/email.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { SearchModule } from './search/search.module';
 import { IntegrationsModule } from './integrations/integrations.module';
+import { DictionariesModule } from './dictionaries/dictionaries.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { IntegrationsModule } from './integrations/integrations.module';
     AttachmentsModule,
     SearchModule,
     IntegrationsModule,
+    DictionariesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

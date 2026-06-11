@@ -179,5 +179,13 @@ JWT_SECRET=research-mis-secret-2024
 ## 确定接口清单
 
 - 详细接口协议固定记录在 `docs/API_PROTOCOL.md`。
-- 当前确定接口包括：`auth/login`、成果登记 CRUD（papers/patents/copyrights/transforms）、`papers/doi-lookup`、Rust 搜索 `/api/search`、费用 `/api/fees`、提醒 `/api/reminders`、附件 `/api/attachments`、统计 `/api/stats`、审计日志 `/api/audit-logs`、用户管理 `/api/users`、部门管理 `/api/departments`、外部接口配置中心 `/api/integrations`（前端路由 `/integrations`）。
-- 尚未实现的审批、数据字典、报表导出、备份恢复、涉密授权、检索日志接口，必须实现时再补充协议，不要临时随意命名。
+- 当前确定接口包括：`auth/login`、成果登记 CRUD（papers/patents/copyrights/transforms）、`papers/doi-lookup`、Rust 搜索 `/api/search`、费用 `/api/fees`、提醒 `/api/reminders`、附件 `/api/attachments`、统计 `/api/stats`、审计日志 `/api/audit-logs`、用户管理 `/api/users`、部门管理 `/api/departments`、数据字典 `/api/dictionaries`、外部接口配置中心 `/api/integrations`（前端路由 `/integrations`）。
+- 尚未实现的审批、报表导出、备份恢复、涉密授权、检索日志接口，必须实现时再补充协议，不要临时随意命名。
+
+## 需求落地原则（必须遵守）
+
+- 本项目不按 MVP 简化版随意落地；`研究院科研成果管理系统说明.html` 已明确的需求，应按正式业务系统设计。
+- 设计数据库、接口、前端页面时，优先对照 HTML 需求规格说明书，不能只做临时单表/简表方案。
+- 可以分阶段编码实现，但数据模型和接口命名必须预留完整业务扩展能力，避免后续大改。
+- 数据字典、审批流程、外部接口、涉密授权、报表导出、搜索日志等基础支撑能力，设计时必须按真实业务结构，不使用仅适合 demo 的 MVP 结构。
+- 若用户要求“记住”某项项目决策，必须同步写入本文件或对应 docs 文档，确保后续 agent 能继续遵守。

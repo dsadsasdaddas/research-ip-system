@@ -44,6 +44,7 @@ function logout() { auth.logout(); router.push('/login') }
           <template #title><el-icon><Setting /></el-icon><span>系统管理</span></template>
           <el-menu-item index="/users"><el-icon><Setting /></el-icon><span>用户管理</span></el-menu-item>
           <el-menu-item index="/departments"><el-icon><Setting /></el-icon><span>部门管理</span></el-menu-item>
+          <el-menu-item index="/dictionaries"><el-icon><Setting /></el-icon><span>数据字典</span></el-menu-item>
           <el-menu-item index="/integrations"><el-icon><Setting /></el-icon><span>接口配置</span></el-menu-item>
         </el-sub-menu>
       </el-menu>

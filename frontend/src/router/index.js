@@ -10,6 +10,7 @@ import AuditLogView from '../views/AuditLogView.vue'
 import IntegrationsView from '../views/IntegrationsView.vue'
 import UsersView from '../views/UsersView.vue'
 import DepartmentsView from '../views/DepartmentsView.vue'
+import DictionariesView from '../views/DictionariesView.vue'
 import paper from '../modules/paper'
 import patent from '../modules/patent'
 import copyright from '../modules/copyright'
@@ -33,6 +34,7 @@ const routes = [
       { path: 'audit-logs', component: AuditLogView, meta: { title: '操作日志' } },
       { path: 'users', component: UsersView, meta: { title: '用户管理', sysAdminOnly: true } },
       { path: 'departments', component: DepartmentsView, meta: { title: '部门管理', sysAdminOnly: true } },
+      { path: 'dictionaries', component: DictionariesView, meta: { title: '数据字典', sysAdminOnly: true } },
       { path: 'integrations', component: IntegrationsView, meta: { title: '接口配置中心', sysAdminOnly: true } },
     ],
   },

@@ -472,12 +472,47 @@ sms        短信通知
 - 当前已落地配置中心、重试、日志、降级标记；真实业务同步接口后续在对应模块内接入。
 - 前端页面已接入 `/integrations`，用于系统管理员查看、编辑、测试接口配置和查看日志。
 
-### 8.13 暂不承诺的接口
+
+### 8.13 数据字典
+
+> 数据字典按正式业务两表设计：`dictionary_type` + `dictionary_item`，不使用单表简化方案。普通登录用户可读取字典，只有系统管理员可维护。
+
+| 方法 | 路径 | 说明 | 角色 |
+|---|---|---|---|
+| GET | `/api/dictionaries/types` | 字典类型列表 | 登录用户 |
+| GET | `/api/dictionaries/types/:code` | 字典类型详情 | 登录用户 |
+| POST | `/api/dictionaries/types` | 新增字典类型 | `sys_admin` |
+| PATCH | `/api/dictionaries/types/:id` | 更新字典类型 | `sys_admin` |
+| DELETE | `/api/dictionaries/types/:id` | 删除非系统字典类型 | `sys_admin` |
+| GET | `/api/dictionaries/items?typeCode=secret_level&activeOnly=true` | 字典项列表 | 登录用户 |
+| GET | `/api/dictionaries/items/:id` | 字典项详情 | 登录用户 |
+| POST | `/api/dictionaries/items` | 新增字典项 | `sys_admin` |
+| PATCH | `/api/dictionaries/items/:id` | 更新字典项 | `sys_admin` |
+| DELETE | `/api/dictionaries/items/:id` | 删除非系统字典项 | `sys_admin` |
+
+默认内置字典类型：
+
+```txt
+secret_level
+paper_status
+paper_included_type
+paper_partition
+patent_type
+patent_legal_status
+patent_mark
+fee_type
+fee_status
+remind_level
+transform_type
+transform_status
+result_type
+```
+
+### 8.14 暂不承诺的接口
 
 以下需求暂不定义正式接口，等实现时再补：
 
 - 审批流程接口
-- 数据字典接口
 - 报表导出接口
 - 数据备份/恢复接口
 - 涉密授权接口
