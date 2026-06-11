@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 /** 提醒规则表 —— 管理员配置，自动生成提醒任务 */
 @Entity('reminder_rule')
@@ -12,7 +12,7 @@ export class ReminderRule {
   @Column({ type: 'varchar', name: 'remind_type', length: 50, nullable: true, comment: '类型: 项目申报/奖项申报/专利年费/软著维护/成果转化后评估/涉密成果核查' })
   remindType!: string | null;
 
-  @Column({ name: 'deadline', type: 'date', nullable: true, comment: '截止日期' })
+  @Column({ name: 'deadline', type: 'varchar', length: 20, nullable: true, comment: '截止日期(YYYY-MM-DD)' })
   deadline!: string | null;
 
   @Column({ name: 'days_before', type: 'int', default: 30, comment: '提前几天提醒' })
@@ -32,4 +32,7 @@ export class ReminderRule {
 
   @CreateDateColumn({ name: 'create_time' })
   createTime!: Date;
+
+  @UpdateDateColumn({ name: 'update_time' })
+  updateTime!: Date;
 }

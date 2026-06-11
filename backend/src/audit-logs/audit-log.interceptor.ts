@@ -39,13 +39,27 @@ function guessAction(method: string): string {
   return method.toLowerCase();
 }
 
-function sanitize(body: Record<string, unknown> | undefined): string {
+/** 需要脱敏的 key 关键词（不区分大小写） */
+const SENSITIVE_KEYS = /password|secret|token|apikey|api_key|private|credential/i;
+
+/** 递归脱敏：遍历所有层级的 key，匹配敏感词的值替换为 *** */
+function sanitize(body: unknown): string {
   if (!body) return '';
   try {
-    const clone = { ...body };
-    delete clone['password'];
-    return JSON.stringify(clone).slice(0, 2000);
+    const redacted = redact(body);
+    return JSON.stringify(redacted).slice(0, 2000);
   } catch { return ''; }
+}
+
+function redact(value: unknown): unknown {
+  if (value === null || value === undefined) return value;
+  if (typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(redact);
+  const result: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    result[k] = SENSITIVE_KEYS.test(k) ? '***' : redact(v);
+  }
+  return result;
 }
 
 @Injectable()

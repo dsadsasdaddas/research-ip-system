@@ -14,6 +14,8 @@ import { CreateTransformDto } from './dto/create-transform.dto';
 import { UpdateTransformDto } from './dto/update-transform.dto';
 import { TransformsService } from './transforms.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthUser } from '../auth/types/auth-user.interface';
 
 /**
  * 成果转化 REST 接口:
@@ -34,8 +36,8 @@ export class TransformsController {
   }
 
   @Get()
-  findAll(@Query('keyword') keyword?: string) {
-    return this.svc.findAll(keyword);
+  findAll(@Query('keyword') keyword?: string, @CurrentUser() user?: AuthUser) {
+    return this.svc.findAll(keyword, user);
   }
 
   @Get(':id')

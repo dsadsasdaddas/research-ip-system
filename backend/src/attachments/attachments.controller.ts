@@ -49,8 +49,9 @@ export class AttachmentsController {
   }
 
   @Get(':id/download')
-  async download(@Param('id') id: string, @Res() res: Response) {
+  async download(@Param('id') id: string, @Res() res: Response, @CurrentUser() user: AuthUser) {
     const att = await this.svc.findOne(+id);
+    this.svc.checkAccess(att, user);
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(att.originalName)}"`);
     res.setHeader('Content-Type', att.mimeType || 'application/octet-stream');
     const stream = fs.createReadStream(att.filePath);
@@ -58,7 +59,7 @@ export class AttachmentsController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     return this.svc.remove(+id);
   }
 }

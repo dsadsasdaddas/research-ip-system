@@ -53,12 +53,12 @@ export class PapersController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.papersService.findOne(id);
+  findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.papersService.findOne(id, user);
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePaperDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePaperDto, @CurrentUser() user: AuthUser) {
     return this.papersService.update(id, dto);
   }
 

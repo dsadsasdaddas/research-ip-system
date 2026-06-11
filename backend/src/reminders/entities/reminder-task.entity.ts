@@ -15,10 +15,10 @@ export class ReminderTask {
   @Column({ name: 'target_id', type: 'int', nullable: true, comment: '关联ID' })
   targetId!: number | null;
 
-  @Column({ name: 'remind_date', type: 'date', nullable: true, comment: '提醒日期' })
+  @Column({ name: 'remind_date', type: 'varchar', length: 20, nullable: true, comment: '提醒日期(YYYY-MM-DD)' })
   remindDate!: string | null;
 
-  @Column({ name: 'deadline', type: 'date', nullable: true, comment: '事项截止日' })
+  @Column({ name: 'deadline', type: 'varchar', length: 20, nullable: true, comment: '事项截止日(YYYY-MM-DD)' })
   deadline!: string | null;
 
   @Column({ type: 'varchar', name: 'remind_level', length: 20, default: '普通', comment: '紧急等级: 普通/重要/紧急' })

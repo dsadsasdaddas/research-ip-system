@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 /**
  * 角色枚举 —— 对应 §2 用户角色表
@@ -44,6 +44,12 @@ export class User {
   @Column({ name: 'is_active', default: true, comment: '是否启用' })
   isActive!: boolean;
 
+  @Column({ name: 'last_login_time', type: 'datetime', nullable: true, comment: '最后登录时间' })
+  lastLoginTime!: Date | null;
+
   @CreateDateColumn({ name: 'create_time' })
   createTime!: Date;
+
+  @UpdateDateColumn({ name: 'update_time' })
+  updateTime!: Date;
 }

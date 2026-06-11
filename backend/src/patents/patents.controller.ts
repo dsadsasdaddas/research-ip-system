@@ -14,6 +14,8 @@ import { CreatePatentDto } from './dto/create-patent.dto';
 import { UpdatePatentDto } from './dto/update-patent.dto';
 import { PatentsService } from './patents.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthUser } from '../auth/types/auth-user.interface';
 
 /**
  * 专利 REST 接口(全局前缀 /api,故实际路径):
@@ -34,13 +36,13 @@ export class PatentsController {
   }
 
   @Get()
-  findAll(@Query('keyword') keyword?: string) {
-    return this.patentsService.findAll(keyword);
+  findAll(@Query('keyword') keyword?: string, @CurrentUser() user?: AuthUser) {
+    return this.patentsService.findAll(keyword, user);
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.patentsService.findOne(id);
+  findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.patentsService.findOne(id, user);
   }
 
   @Patch(':id')

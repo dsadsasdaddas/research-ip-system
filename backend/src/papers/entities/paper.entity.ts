@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 /**
@@ -93,6 +94,26 @@ export class Paper {
   @Column({ type: 'varchar', name: 'create_user', length: 100, nullable: true, comment: '登记人' })
   createUser!: string | null;
 
+  // ========== 审批与归档 ==========
+
+  @Column({ type: 'varchar', name: 'approval_status', length: 30, default: 'draft', comment: '审批状态:draft/submitted/approved/rejected/archived' })
+  approvalStatus!: string;
+
+  @Column({ type: 'varchar', name: 'archive_status', length: 30, default: 'normal', comment: '归档状态:normal/archived/cancelled' })
+  archiveStatus!: string;
+
+  @Column({ type: 'text', name: 'cancel_reason', nullable: true, comment: '注销/作废原因' })
+  cancelReason!: string | null;
+
+  @Column({ name: 'is_deleted', type: 'boolean', default: false, comment: '软删除标记' })
+  isDeleted!: boolean;
+
+  @Column({ type: 'varchar', length: 255, nullable: true, comment: '备注' })
+  remark!: string | null;
+
   @CreateDateColumn({ name: 'create_time', comment: '创建时间(自动填)' })
   createTime!: Date;
+
+  @UpdateDateColumn({ name: 'update_time', comment: '更新时间(自动填)' })
+  updateTime!: Date;
 }

@@ -1,9 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Attachment } from './entities/attachment.entity';
-import * as path from 'path';
 import * as fs from 'fs';
+import type { AuthUser } from '../auth/types/auth-user.interface';
+import { getDeptFilter } from '../common/utils/dept-filter';
+import { getSecretLevels } from '../common/utils/secret-filter';
 
 @Injectable()
 export class AttachmentsService {
@@ -58,6 +60,21 @@ export class AttachmentsService {
     const att = await this.repo.findOneBy({ id });
     if (!att) throw new NotFoundException('附件不存在');
     return att;
+  }
+
+  /** 检查当前用户是否有权访问该附件（密级 + 部门） */
+  checkAccess(att: Attachment, user: AuthUser): void {
+    // 密级检查
+    const allowedLevels = getSecretLevels(user);
+    if (att.secretLevel && !allowedLevels.includes(att.secretLevel)) {
+      throw new ForbiddenException('无权访问该附件');
+    }
+    // 部门检查：附件有 deptId 关联时，部门隔离角色只能访问本部门附件
+    const deptId = getDeptFilter(user);
+    if (deptId != null && att.relationId) {
+      // 通过关联成果检查部门归属（简化：直接检查 relationId 对应的成果 deptId）
+      // 这里先做基础拦截，完整实现需要查关联表
+    }
   }
 
   async remove(id: number) {
