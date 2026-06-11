@@ -189,3 +189,11 @@ JWT_SECRET=research-mis-secret-2024
 - 可以分阶段编码实现，但数据模型和接口命名必须预留完整业务扩展能力，避免后续大改。
 - 数据字典、审批流程、外部接口、涉密授权、报表导出、搜索日志等基础支撑能力，设计时必须按真实业务结构，不使用仅适合 demo 的 MVP 结构。
 - 若用户要求“记住”某项项目决策，必须同步写入本文件或对应 docs 文档，确保后续 agent 能继续遵守。
+
+
+## 数据库建表原则（必须遵守）
+
+- 正式数据库结构以 `database/schema.sql` 为准，默认数据以 `database/seed.sql` 为准。
+- TypeORM Entity 只负责代码映射；生产和 CI 必须使用 `TYPEORM_SYNC=false`，禁止依赖 `synchronize: true` 自动建表。
+- 新增表/字段时：先改 SQL schema/migration，再改 Entity/DTO/Service/Controller/Frontend。
+- 所有 HTML 需求中明确的支撑表（审批、数据字典、报表、搜索日志、涉密、备份、外部接口）必须按正式业务结构设计。

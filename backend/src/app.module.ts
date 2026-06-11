@@ -31,7 +31,7 @@ import { DictionariesModule } from './dictionaries/dictionaries.module';
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       autoLoadEntities: true,
-      synchronize: true,
+      synchronize: process.env.TYPEORM_SYNC === 'true',
     }),
     PapersModule,
     PatentsModule,
