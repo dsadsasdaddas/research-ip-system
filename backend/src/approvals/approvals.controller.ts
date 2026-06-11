@@ -112,31 +112,28 @@ export class ApprovalsController {
   @Post('instances/:id/approve')
   approve(
     @Param('id', ParseIntPipe) id: number,
-    @Body('nodeId', ParseIntPipe) nodeId: number,
     @Body() dto: ApproveActionDto,
     @CurrentUser() user: AuthUser,
   ) {
-    return this.svc.approve(id, nodeId, dto, user);
+    return this.svc.approve(id, dto.nodeId, dto, user);
   }
 
   @Post('instances/:id/reject')
   reject(
     @Param('id', ParseIntPipe) id: number,
-    @Body('nodeId', ParseIntPipe) nodeId: number,
     @Body() dto: ApproveActionDto,
     @CurrentUser() user: AuthUser,
   ) {
-    return this.svc.reject(id, nodeId, dto, user);
+    return this.svc.reject(id, dto.nodeId, dto, user);
   }
 
   @Post('instances/:id/return')
   returnToPrevious(
     @Param('id', ParseIntPipe) id: number,
-    @Body('nodeId', ParseIntPipe) nodeId: number,
     @Body() dto: ApproveActionDto,
     @CurrentUser() user: AuthUser,
   ) {
-    return this.svc.returnToPrevious(id, nodeId, dto, user);
+    return this.svc.returnToPrevious(id, dto.nodeId, dto, user);
   }
 
   @Post('instances/:id/cancel')

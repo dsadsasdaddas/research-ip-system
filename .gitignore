@@ -20,6 +20,10 @@ pnpm-debug.log*
 # ===== 数据库数据卷(如果挂在项目目录里)=====
 mysql-data/
 
+# ===== 运行时生成的备份/导出文件(备份与报表导出接口产生)=====
+backend/backups/
+backend/exports/
+
 # ===== 编辑器 / 系统垃圾文件 =====
 .DS_Store
 .idea/
