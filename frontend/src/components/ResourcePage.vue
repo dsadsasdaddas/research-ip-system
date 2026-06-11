@@ -1,8 +1,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search as SearchIcon } from '@element-plus/icons-vue'
+import { Search as SearchIcon, Download } from '@element-plus/icons-vue'
 import SchemaForm from './SchemaForm.vue'
+import http from '../api/http'
 
 /**
  * 通用「成果管理页」:搜索 + 列表表格 + 新增/编辑弹窗 + 删除。
@@ -11,6 +12,7 @@ import SchemaForm from './SchemaForm.vue'
  *   - formSections: 弹窗表单的字段配置(交给 SchemaForm 渲染)
  *   - blankForm:  返回一份空白表单对象的函数
  *   - api:        一套增删改查函数(createCrudApi 生成)
+ *   - resourcePath: (可选)资源路径,用于导出接口
  */
 const props = defineProps({
   entityName: { type: String, default: '记录' }, // 用于"新增XX""编辑XX"等文案
@@ -20,6 +22,7 @@ const props = defineProps({
   formSections: { type: Array, required: true },
   blankForm: { type: Function, required: true },
   api: { type: Object, required: true },
+  resourcePath: { type: String, default: '' },
 })
 
 // ===== 列表 & 搜索 =====
@@ -99,6 +102,25 @@ async function onDelete(row) {
   }
 }
 
+// ===== 导出 =====
+const exportLoading = ref(false)
+
+async function handleExport(format) {
+  if (!props.resourcePath) {
+    ElMessage.warning('未配置导出路径')
+    return
+  }
+  exportLoading.value = true
+  try {
+    await http.post(`/${props.resourcePath}/export`, { format, keyword: keyword.value })
+    ElMessage.success('导出任务已提交')
+  } catch (e) {
+    ElMessage.error('导出失败：' + (e.message || ''))
+  } finally {
+    exportLoading.value = false
+  }
+}
+
 onMounted(loadList)
 </script>
 
@@ -117,6 +139,17 @@ onMounted(loadList)
       />
       <el-button @click="loadList">搜索</el-button>
       <div class="spacer" />
+      <el-dropdown v-if="resourcePath" trigger="click" @command="handleExport" style="margin-right: 8px">
+        <el-button :loading="exportLoading">
+          <el-icon style="margin-right: 4px"><Download /></el-icon>导出
+        </el-button>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="xlsx">XLSX</el-dropdown-item>
+            <el-dropdown-item command="csv">CSV</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
       <el-button type="primary" @click="openCreate">{{ newButtonText }}</el-button>
     </div>
 

@@ -2,15 +2,20 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Attachment } from './entities/attachment.entity';
+import { AttachmentVersion } from './entities/attachment-version.entity';
+import { AttachmentAccessLog } from './entities/attachment-access-log.entity';
 import * as fs from 'fs';
 import type { AuthUser } from '../auth/types/auth-user.interface';
 import { getDeptFilter } from '../common/utils/dept-filter';
 import { getSecretLevels } from '../common/utils/secret-filter';
+import { paginate } from '../common/utils/pagination';
 
 @Injectable()
 export class AttachmentsService {
   constructor(
     @InjectRepository(Attachment) private repo: Repository<Attachment>,
+    @InjectRepository(AttachmentVersion) private versionRepo: Repository<AttachmentVersion>,
+    @InjectRepository(AttachmentAccessLog) private accessLogRepo: Repository<AttachmentAccessLog>,
     private dataSource: DataSource,
   ) {}
 
@@ -144,5 +149,24 @@ export class AttachmentsService {
     }
     await this.repo.delete(id);
     return { success: true };
+  }
+
+  /** 获取附件版本历史 */
+  async getVersions(attachmentId: number): Promise<AttachmentVersion[]> {
+    await this.findOne(attachmentId);
+    return this.versionRepo.find({
+      where: { attachmentId },
+      order: { version: 'DESC' },
+    });
+  }
+
+  /** 分页获取附件访问日志 */
+  async getAccessLogs(attachmentId: number, page?: number, pageSize?: number) {
+    await this.findOne(attachmentId);
+    const qb = this.accessLogRepo
+      .createQueryBuilder('l')
+      .where('l.attachment_id = :attachmentId', { attachmentId })
+      .orderBy('l.create_time', 'DESC');
+    return paginate(qb, page, pageSize);
   }
 }

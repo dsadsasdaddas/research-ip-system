@@ -12,7 +12,10 @@ import {
 } from '@nestjs/common';
 import { CreateTransformDto } from './dto/create-transform.dto';
 import { UpdateTransformDto } from './dto/update-transform.dto';
+import { CreateTransformDistributionDto } from './dto/create-transform-distribution.dto';
+import { UpdateTransformDistributionDto } from './dto/update-transform-distribution.dto';
 import { TransformsService } from './transforms.service';
+import { TransformDistributionsService } from './transform-distributions.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/types/auth-user.interface';
@@ -24,11 +27,20 @@ import type { AuthUser } from '../auth/types/auth-user.interface';
  *   GET    /api/transforms/:id
  *   PATCH  /api/transforms/:id
  *   DELETE /api/transforms/:id
+ *
+ * 分配记录嵌套路由:
+ *   GET    /api/transforms/:transformId/distributions
+ *   POST   /api/transforms/:transformId/distributions
+ *   PATCH  /api/transform-distributions/:id
+ *   DELETE /api/transform-distributions/:id
  */
 @UseGuards(JwtAuthGuard)
 @Controller('transforms')
 export class TransformsController {
-  constructor(private readonly svc: TransformsService) {}
+  constructor(
+    private readonly svc: TransformsService,
+    private readonly distSvc: TransformDistributionsService,
+  ) {}
 
   @Post()
   create(@Body() dto: CreateTransformDto, @CurrentUser() user: AuthUser) {
@@ -39,6 +51,23 @@ export class TransformsController {
   findAll(@Query('keyword') keyword?: string, @CurrentUser() user?: AuthUser) {
     return this.svc.findAll(keyword, user);
   }
+
+  // ========== 分配记录嵌套路由 (必须在 :id 路由之前) ==========
+
+  @Get(':transformId/distributions')
+  listDistributions(@Param('transformId', ParseIntPipe) transformId: number) {
+    return this.distSvc.findByTransform(transformId);
+  }
+
+  @Post(':transformId/distributions')
+  createDistribution(
+    @Param('transformId', ParseIntPipe) transformId: number,
+    @Body() dto: CreateTransformDistributionDto,
+  ) {
+    return this.distSvc.create(transformId, dto);
+  }
+
+  // ========== 主资源 CRUD ==========
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
@@ -53,5 +82,27 @@ export class TransformsController {
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
     return this.svc.remove(id, user);
+  }
+}
+
+/**
+ * 独立控制器：分配记录的更新 / 删除使用不带前缀的 /api/transform-distributions 路由。
+ */
+@UseGuards(JwtAuthGuard)
+@Controller('transform-distributions')
+export class TransformDistributionsController {
+  constructor(private readonly distSvc: TransformDistributionsService) {}
+
+  @Patch(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateTransformDistributionDto,
+  ) {
+    return this.distSvc.update(id, dto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.distSvc.remove(id);
   }
 }

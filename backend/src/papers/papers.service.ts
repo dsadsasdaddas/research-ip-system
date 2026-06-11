@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, In, Like, Repository } from 'typeorm';
 import { CreatePaperDto } from './dto/create-paper.dto';
@@ -20,14 +20,20 @@ export class PapersService {
     private readonly paperRepo: Repository<Paper>,
   ) {}
 
-  /** 新增论文 */
-  create(dto: CreatePaperDto, user: AuthUser) {
+  /** 新增论文（DOI 唯一性校验 + 归属字段从 user 注入） */
+  async create(dto: CreatePaperDto, user: AuthUser) {
+    if (dto.doi) {
+      const existing = await this.paperRepo.findOne({ where: { doi: dto.doi } });
+      if (existing) throw new ConflictException(`DOI "${dto.doi}" 已存在`);
+    }
+    const { deptId: _ignored, createUser: _ignored2, ...safeDto } = dto;
+    void _ignored; void _ignored2;
     const paper = this.paperRepo.create({
-      ...dto,
+      ...safeDto,
       deptId: user.deptId ?? null,
       createUser: user.username,
-    }); // DTO -> 实体对象
-    return this.paperRepo.save(paper); // 存入数据库
+    });
+    return this.paperRepo.save(paper);
   }
 
   /** 查询列表;传了 keyword 就按标题模糊搜；部门隔离角色只返回本部门数据；按密级过滤 */

@@ -12,6 +12,7 @@ export default {
   entityName: '专利',
   searchPlaceholder: '按专利名称搜索',
   newButtonText: '新增专利',
+  resourcePath: 'patents',
   api: createCrudApi('patents'),
 
   columns: [

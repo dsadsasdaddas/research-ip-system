@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Paper } from '../papers/entities/paper.entity';
@@ -8,6 +8,7 @@ import type { AuthUser } from '../auth/types/auth-user.interface';
 import { getDeptFilter } from '../common/utils/dept-filter';
 import { getSecretLevels } from '../common/utils/secret-filter';
 import { RustSearchAdapter, RustSearchDoc, RustSearchDocType } from './rust-search-adapter';
+import { SearchLogsService } from '../search-logs/search-logs.service';
 
 export interface SearchResultItem {
   type: 'paper' | 'patent' | 'copyright';
@@ -50,6 +51,7 @@ export class SearchService {
     @InjectRepository(Patent) private patentRepo: Repository<Patent>,
     @InjectRepository(Copyright) private copyrightRepo: Repository<Copyright>,
     private readonly rustSearch: RustSearchAdapter,
+    @Optional() private readonly searchLogsService?: SearchLogsService,
   ) {}
 
   async search(q: string, types: string[], user: AuthUser): Promise<SearchResult> {
@@ -71,6 +73,17 @@ export class SearchService {
       .slice(0, 50);
 
     const elapsedMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+    // 异步记录检索日志（不阻塞搜索响应）
+    this.searchLogsService?.log({
+      keyword,
+      types: types.join(','),
+      resultCount: items.length,
+      elapsedMs,
+      engine: 'rust',
+      userId: user.id,
+      username: user.username,
+      deptId: user.deptId,
+    }).catch(() => {});
     return { engine: 'rust', elapsedMs, total: items.length, items };
   }
 

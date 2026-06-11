@@ -11,6 +11,7 @@ export default {
   entityName: '转化项目',
   searchPlaceholder: '按交易对方搜索',
   newButtonText: '新增转化',
+  resourcePath: 'transforms',
   api: createCrudApi('transforms'),
 
   columns: [

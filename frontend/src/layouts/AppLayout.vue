@@ -1,10 +1,12 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import notificationsApi from '../api/notifications'
 import {
   Document, Medal, Files, DataAnalysis, Bell, Search,
   Setting, Fold, Expand, Refresh, Wallet, List,
+  Checked, Tickets, Notification, PieChart, Lock, FolderChecked,
 } from '@element-plus/icons-vue'
 
 const route    = useRoute()
@@ -16,6 +18,62 @@ const pageTitle  = computed(() => route.meta.title || '')
 const isSysAdmin = computed(() => auth.user?.role === 'sys_admin')
 
 function logout() { auth.logout(); router.push('/login') }
+
+// ===== 通知铃铛 =====
+const unreadCount = ref(0)
+const recentNotifs = ref([])
+const bellPopover = ref(false)
+let pollTimer = null
+
+async function fetchUnreadCount() {
+  try {
+    const res = await notificationsApi.unreadCount()
+    unreadCount.value = res.count ?? res ?? 0
+  } catch { /* silent */ }
+}
+
+async function fetchRecentNotifs() {
+  try {
+    const res = await notificationsApi.list({ page: 1, pageSize: 5 })
+    recentNotifs.value = res.items || res
+  } catch { recentNotifs.value = [] }
+}
+
+async function onBellClick() {
+  await fetchRecentNotifs()
+}
+
+function viewAllNotifs() {
+  bellPopover.value = false
+  router.push('/notifications')
+}
+
+function formatNotifTime(t) {
+  if (!t) return ''
+  const d = new Date(t)
+  const now = new Date()
+  const diff = now - d
+  if (diff < 60000) return '刚刚'
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
+  return d.toLocaleDateString('zh-CN')
+}
+
+const TYPE_TAG = {
+  system: 'info',
+  reminder: 'warning',
+  approval: 'success',
+  report: '',
+}
+
+onMounted(() => {
+  fetchUnreadCount()
+  pollTimer = setInterval(fetchUnreadCount, 60000)
+})
+
+onBeforeUnmount(() => {
+  if (pollTimer) clearInterval(pollTimer)
+})
 </script>
 
 <template>
@@ -38,6 +96,18 @@ function logout() { auth.logout(); router.push('/login') }
         <el-menu-item index="/reminders"><el-icon><Bell /></el-icon><span>申报提醒</span></el-menu-item>
         <el-menu-item index="/search"><el-icon><Search /></el-icon><span>全文检索</span></el-menu-item>
         <el-menu-item index="/dashboard"><el-icon><DataAnalysis /></el-icon><span>统计看板</span></el-menu-item>
+
+        <el-sub-menu index="workflow">
+          <template #title><el-icon><Tickets /></el-icon><span>工作流</span></template>
+          <el-menu-item index="/approvals"><el-icon><Checked /></el-icon><span>审批管理</span></el-menu-item>
+          <el-menu-item index="/notifications"><el-icon><Notification /></el-icon><span>通知中心</span></el-menu-item>
+        </el-sub-menu>
+
+        <el-sub-menu index="data">
+          <template #title><el-icon><PieChart /></el-icon><span>数据</span></template>
+          <el-menu-item index="/reports"><el-icon><PieChart /></el-icon><span>报表中心</span></el-menu-item>
+        </el-sub-menu>
+
         <el-menu-item index="/audit-logs"><el-icon><List /></el-icon><span>操作日志</span></el-menu-item>
 
         <el-sub-menu v-if="isSysAdmin" index="sys">
@@ -46,6 +116,8 @@ function logout() { auth.logout(); router.push('/login') }
           <el-menu-item index="/departments"><el-icon><Setting /></el-icon><span>部门管理</span></el-menu-item>
           <el-menu-item index="/dictionaries"><el-icon><Setting /></el-icon><span>数据字典</span></el-menu-item>
           <el-menu-item index="/integrations"><el-icon><Setting /></el-icon><span>接口配置</span></el-menu-item>
+          <el-menu-item index="/rbac"><el-icon><Lock /></el-icon><span>RBAC权限</span></el-menu-item>
+          <el-menu-item index="/backup"><el-icon><FolderChecked /></el-icon><span>备份管理</span></el-menu-item>
         </el-sub-menu>
       </el-menu>
     </el-aside>
@@ -59,6 +131,38 @@ function logout() { auth.logout(); router.push('/login') }
           <span class="page-title">{{ pageTitle }}</span>
         </div>
         <div class="header-right">
+          <!-- 通知铃铛 -->
+          <el-popover
+            ref="bellPopover"
+            :width="320"
+            trigger="click"
+            @show="onBellClick"
+          >
+            <template #reference>
+              <el-badge :value="unreadCount" :hidden="unreadCount === 0" :max="99" class="bell-badge">
+                <el-icon class="bell-icon"><Bell /></el-icon>
+              </el-badge>
+            </template>
+            <div class="notif-popover">
+              <div class="notif-popover-header">
+                <span class="notif-popover-title">通知</span>
+                <el-button link size="small" @click="viewAllNotifs">查看全部</el-button>
+              </div>
+              <div class="notif-popover-list" v-if="recentNotifs.length > 0">
+                <div v-for="item in recentNotifs" :key="item.id" class="notif-popover-item">
+                  <div class="notif-popover-item-header">
+                    <el-tag :type="TYPE_TAG[item.messageType] || 'info'" size="small">
+                      {{ item.messageType === 'system' ? '系统' : item.messageType === 'reminder' ? '提醒' : item.messageType === 'approval' ? '审批' : item.messageType === 'report' ? '报表' : item.messageType }}
+                    </el-tag>
+                    <span class="notif-popover-time">{{ formatNotifTime(item.createTime) }}</span>
+                  </div>
+                  <div class="notif-popover-text">{{ item.title }}</div>
+                </div>
+              </div>
+              <div v-else class="notif-popover-empty">暂无通知</div>
+            </div>
+          </el-popover>
+
           <span class="user">{{ auth.user?.realName || auth.user?.username }} · {{ auth.user?.role }}</span>
           <el-button link size="small" style="margin-left:12px" @click="logout">退出</el-button>
         </div>
@@ -88,6 +192,24 @@ function logout() { auth.logout(); router.push('/login') }
 .header-left { display: flex; align-items: center; gap: 12px; }
 .collapse-btn { font-size: 18px; cursor: pointer; color: var(--text-regular); }
 .page-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+.header-right { display: flex; align-items: center; gap: 8px; }
 .user { font-size: 13px; color: var(--text-regular); }
 .main { background: var(--bg-page); padding: 16px; }
+
+/* 铃铛 */
+.bell-badge { cursor: pointer; }
+.bell-icon { font-size: 18px; color: var(--text-regular); cursor: pointer; }
+.bell-icon:hover { color: var(--el-color-primary); }
+
+/* 通知弹出框 */
+.notif-popover { }
+.notif-popover-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.notif-popover-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.notif-popover-list { display: flex; flex-direction: column; gap: 8px; }
+.notif-popover-item { padding: 6px 0; border-bottom: 1px solid var(--border-color); cursor: pointer; }
+.notif-popover-item:last-child { border-bottom: none; }
+.notif-popover-item-header { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+.notif-popover-time { font-size: 11px; color: var(--text-secondary); margin-left: auto; }
+.notif-popover-text { font-size: 13px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.notif-popover-empty { text-align: center; color: var(--text-secondary); padding: 20px 0; font-size: 13px; }
 </style>

@@ -1,7 +1,8 @@
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { searchApi } from '../api/search'
+import searchLogsApi from '../api/search-logs'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -9,6 +10,9 @@ const q       = ref('')
 const types   = ref([])
 const loading = ref(false)
 const result  = ref(null)
+
+// 热门搜索
+const hotKeywords = ref([])
 
 const TYPE_OPTS = [
   { label: '论文', value: 'paper' },
@@ -30,6 +34,19 @@ function goDetail(item) {
   const pathMap = { paper: '/papers', patent: '/patents', copyright: '/copyrights' }
   if (pathMap[item.type]) router.push(pathMap[item.type])
 }
+
+function clickHotKeyword(keyword) {
+  q.value = keyword
+  doSearch()
+}
+
+async function loadHotKeywords() {
+  try {
+    hotKeywords.value = await searchLogsApi.hotKeywords(10)
+  } catch { /* silent */ }
+}
+
+onMounted(loadHotKeywords)
 </script>
 
 <template>
@@ -49,6 +66,22 @@ function goDetail(item) {
           </el-button>
         </template>
       </el-input>
+    </div>
+
+    <!-- 热门搜索 -->
+    <div class="hot-keywords" v-if="hotKeywords.length > 0">
+      <span class="hot-label">热门搜索：</span>
+      <div class="hot-tags">
+        <el-tag
+          v-for="(kw, idx) in hotKeywords"
+          :key="idx"
+          class="hot-tag"
+          effect="plain"
+          @click="clickHotKeyword(kw.keyword || kw)"
+        >
+          {{ kw.keyword || kw }}
+        </el-tag>
+      </div>
     </div>
 
     <div class="filter-bar">
@@ -89,6 +122,15 @@ function goDetail(item) {
 <style scoped>
 .search-page { display: flex; flex-direction: column; gap: 12px; }
 .search-box { display: flex; gap: 0; }
+.hot-keywords {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-surface); border: 1px solid var(--border-color);
+  border-radius: 8px; padding: 10px 16px;
+}
+.hot-label { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+.hot-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.hot-tag { cursor: pointer; transition: color 0.15s; }
+.hot-tag:hover { color: var(--el-color-primary); border-color: var(--el-color-primary); }
 .filter-bar {
   display: flex; align-items: center; gap: 4px;
   background: var(--bg-surface); border: 1px solid var(--border-color);

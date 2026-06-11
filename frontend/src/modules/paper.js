@@ -12,6 +12,7 @@ export default {
   entityName: '论文',
   searchPlaceholder: '按标题搜索',
   newButtonText: '新增论文',
+  resourcePath: 'papers',
   api: createCrudApi('papers'),
 
   // 列表显示哪些列
