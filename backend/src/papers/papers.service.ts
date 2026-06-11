@@ -21,8 +21,12 @@ export class PapersService {
   ) {}
 
   /** 新增论文 */
-  create(dto: CreatePaperDto) {
-    const paper = this.paperRepo.create(dto); // DTO -> 实体对象
+  create(dto: CreatePaperDto, user: AuthUser) {
+    const paper = this.paperRepo.create({
+      ...dto,
+      deptId: user.deptId ?? null,
+      createUser: user.username,
+    }); // DTO -> 实体对象
     return this.paperRepo.save(paper); // 存入数据库
   }
 
@@ -45,7 +49,8 @@ export class PapersService {
     }
     if (user) {
       const allowedLevels = getSecretLevels(user);
-      if (!allowedLevels.includes(paper.secretLevel ?? '公开')) {
+      const deptId = getDeptFilter(user);
+      if (!allowedLevels.includes(paper.secretLevel ?? '公开') || (deptId != null && paper.deptId !== deptId)) {
         throw new NotFoundException(`论文 #${id} 不存在`);
       }
     }
@@ -53,15 +58,18 @@ export class PapersService {
   }
 
   /** 更新 */
-  async update(id: number, dto: UpdatePaperDto) {
-    const paper = await this.findOne(id); // 先确认存在
-    Object.assign(paper, dto); // 合并改动
+  async update(id: number, dto: UpdatePaperDto, user?: AuthUser) {
+    const paper = await this.findOne(id, user); // 先确认存在并校验权限
+    const { deptId: ignoredDeptId, createUser: ignoredCreateUser, ...safeDto } = dto;
+    void ignoredDeptId;
+    void ignoredCreateUser;
+    Object.assign(paper, safeDto); // 合并改动，归属字段不接受前端覆盖
     return this.paperRepo.save(paper);
   }
 
   /** 删除 */
-  async remove(id: number) {
-    const paper = await this.findOne(id);
+  async remove(id: number, user?: AuthUser) {
+    const paper = await this.findOne(id, user);
     await this.paperRepo.remove(paper);
     return { deleted: true, id };
   }

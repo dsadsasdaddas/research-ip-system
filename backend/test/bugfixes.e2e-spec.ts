@@ -4,6 +4,41 @@ import { createTestApp, auth, login } from './helpers';
 
 jest.setTimeout(30000);
 
+interface TitledRecord {
+  id: number;
+  title?: string;
+  name?: string;
+  secretLevel?: string;
+}
+
+interface PublicUserRecord {
+  username: string;
+  deptId: number | null;
+}
+
+interface AuditLogRecord {
+  path?: string;
+  action?: string;
+  body?: string;
+}
+
+interface PagedAuditLogResponse {
+  items?: AuditLogRecord[];
+}
+
+interface SearchRecord {
+  title: string;
+}
+
+interface SearchResponse {
+  items?: SearchRecord[];
+}
+
+interface AttachmentRecord {
+  id: number;
+  originalName: string;
+}
+
 /**
  * Bug Fix 验证测试 — 覆盖 Code Review 发现的 12 个问题
  *
@@ -19,11 +54,12 @@ describe('Bug Fixes (e2e)', () => {
   let csUserToken: string;
   let eeUserToken: string;
   let secretToken: string;
-  let leaderToken: string;
+  let csDeptId: number;
+  let eeDeptId: number;
 
   // 用于清理的测试数据 ID
-  const createdIds: { papers: number[]; patents: number[]; copyrights: number[]; transforms: number[] } = {
-    papers: [], patents: [], copyrights: [], transforms: [],
+  const createdIds: { papers: number[]; patents: number[]; copyrights: number[]; transforms: number[]; attachments: number[] } = {
+    papers: [], patents: [], copyrights: [], transforms: [], attachments: [],
   };
 
   beforeAll(async () => {
@@ -32,11 +68,19 @@ describe('Bug Fixes (e2e)', () => {
     csUserToken = await login(app, 'cs_user', 'Test@123');
     eeUserToken = await login(app, 'ee_user', 'Test@123');
     secretToken = await login(app, 'secret', 'Test@123');
-    leaderToken = await login(app, 'leader', 'Test@123');
+    const usersRes = await request(app.getHttpServer()).get('/api/users').set(auth(adminToken));
+    const users = usersRes.body as PublicUserRecord[];
+    csDeptId = users.find((u) => u.username === 'cs_user')?.deptId ?? 0;
+    eeDeptId = users.find((u) => u.username === 'ee_user')?.deptId ?? 0;
+    expect(csDeptId).toBeGreaterThan(0);
+    expect(eeDeptId).toBeGreaterThan(0);
   });
 
   afterAll(async () => {
     // 清理所有测试数据
+    for (const id of createdIds.attachments) {
+      await request(app.getHttpServer()).delete(`/api/attachments/${id}`).set(auth(adminToken)).catch(() => {});
+    }
     for (const id of createdIds.papers) {
       await request(app.getHttpServer()).delete(`/api/papers/${id}`).set(auth(adminToken)).catch(() => {});
     }
@@ -73,7 +117,7 @@ describe('Bug Fixes (e2e)', () => {
         .get('/api/papers')
         .set(auth(csUserToken));
       expect(res.status).toBe(200);
-      const titles = (res.body as any[]).map((p: any) => p.title);
+      const titles = (res.body as TitledRecord[]).map((p) => p.title);
       expect(titles).not.toContain('【涉密】机密论文测试');
     });
 
@@ -89,7 +133,7 @@ describe('Bug Fixes (e2e)', () => {
         .get('/api/papers')
         .set(auth(secretToken));
       expect(res.status).toBe(200);
-      const titles = (res.body as any[]).map((p: any) => p.title);
+      const titles = (res.body as TitledRecord[]).map((p) => p.title);
       expect(titles).toContain('【涉密】机密论文测试');
     });
 
@@ -107,11 +151,13 @@ describe('Bug Fixes (e2e)', () => {
   // ================================================================
   describe('Fix #2 — 专利/软著/转化部门隔离', () => {
     let patentId: number;
+    let eePatentId: number;
+    let eeTransformId: number;
 
     it('admin 创建专利', async () => {
       const res = await request(app.getHttpServer())
         .post('/api/patents')
-        .set(auth(adminToken))
+        .set(auth(csUserToken))
         .send({ name: '部门隔离测试专利' });
       expect(res.status).toBe(201);
       patentId = res.body.id;
@@ -130,6 +176,94 @@ describe('Bug Fixes (e2e)', () => {
       expect(eeRes.status).toBe(200);
       // 两个不同部门的 researcher 看到的专利列表应不同
       // （admin 创建的专利无 dept_id，两边都可能看到；这里验证接口不报错即可）
+    });
+
+    it('researcher 不能按 id 读取/更新其他部门专利', async () => {
+      const createRes = await request(app.getHttpServer())
+        .post('/api/patents')
+        .set(auth(eeUserToken))
+        .send({ name: '电子所专利-禁止跨部门访问' });
+      expect(createRes.status).toBe(201);
+      eePatentId = createRes.body.id;
+      createdIds.patents.push(eePatentId);
+
+      const getRes = await request(app.getHttpServer())
+        .get(`/api/patents/${eePatentId}`)
+        .set(auth(csUserToken));
+      expect(getRes.status).toBe(404);
+
+      const patchRes = await request(app.getHttpServer())
+        .patch(`/api/patents/${eePatentId}`)
+        .set(auth(csUserToken))
+        .send({ name: '越权改名' });
+      expect(patchRes.status).toBe(404);
+    });
+
+    it('researcher 不能按 id 读取其他部门转化项目', async () => {
+      const createRes = await request(app.getHttpServer())
+        .post('/api/transforms')
+        .set(auth(eeUserToken))
+        .send({ partner: '电子所转化对象' });
+      expect(createRes.status).toBe(201);
+      eeTransformId = createRes.body.id;
+      createdIds.transforms.push(eeTransformId);
+
+      const getRes = await request(app.getHttpServer())
+        .get(`/api/transforms/${eeTransformId}`)
+        .set(auth(csUserToken));
+      expect(getRes.status).toBe(404);
+    });
+  });
+
+  // ================================================================
+  // Fix #4: 附件访问控制
+  // ================================================================
+  describe('Fix #4 — 附件下载/删除/列表访问控制', () => {
+    let eePaperId: number;
+    let attachmentId: number;
+
+    it('researcher 不能列出/下载/删除其他部门成果附件', async () => {
+      const paperRes = await request(app.getHttpServer())
+        .post('/api/papers')
+        .set(auth(eeUserToken))
+        .send({ title: '电子所附件隔离论文' });
+      expect(paperRes.status).toBe(201);
+      eePaperId = paperRes.body.id;
+      createdIds.papers.push(eePaperId);
+
+      const forbiddenUploadRes = await request(app.getHttpServer())
+        .post('/api/attachments/upload')
+        .set(auth(csUserToken))
+        .field('relationType', 'paper')
+        .field('relationId', String(eePaperId))
+        .attach('file', Buffer.from('forbidden file'), 'forbidden.txt');
+      expect(forbiddenUploadRes.status).toBe(403);
+
+      const uploadRes = await request(app.getHttpServer())
+        .post('/api/attachments/upload')
+        .set(auth(adminToken))
+        .field('relationType', 'paper')
+        .field('relationId', String(eePaperId))
+        .attach('file', Buffer.from('secret file'), 'secret.txt');
+      expect(uploadRes.status).toBe(201);
+      attachmentId = uploadRes.body.id;
+      createdIds.attachments.push(attachmentId);
+
+      const listRes = await request(app.getHttpServer())
+        .get(`/api/attachments?relationType=paper&relationId=${eePaperId}`)
+        .set(auth(csUserToken));
+      expect(listRes.status).toBe(200);
+      expect((listRes.body as AttachmentRecord[]).map((a) => a.id)).not.toContain(attachmentId);
+
+      const downloadRes = await request(app.getHttpServer())
+        .get(`/api/attachments/${attachmentId}/download`)
+        .set(auth(csUserToken));
+      expect(downloadRes.status).toBe(403);
+
+      const deleteRes = await request(app.getHttpServer())
+        .delete(`/api/attachments/${attachmentId}`)
+        .set(auth(csUserToken));
+      expect(deleteRes.status).toBe(403);
     });
   });
 
@@ -209,8 +343,8 @@ describe('Bug Fixes (e2e)', () => {
       expect(logRes.status).toBe(200);
 
       // 确认没有明文密码
-      const logs = Array.isArray(logRes.body) ? logRes.body : (logRes.body as any).items ?? [];
-      const relevantLog = logs.find((l: any) =>
+      const logs = Array.isArray(logRes.body) ? logRes.body as AuditLogRecord[] : (logRes.body as PagedAuditLogResponse).items ?? [];
+      const relevantLog = logs.find((l) =>
         l.path?.includes(`/users/${userId}`) && l.action === 'update',
       );
       if (relevantLog?.body) {
@@ -277,8 +411,8 @@ describe('Bug Fixes (e2e)', () => {
         .set(auth(csUserToken));
       expect(res.status).toBe(200);
       // 搜索结果中不应有涉密论文
-      const items = (res.body as any).items ?? [];
-      items.forEach((item: any) => {
+      const items = (res.body as SearchResponse).items ?? [];
+      items.forEach((item) => {
         expect(item.title).not.toContain('机密');
       });
     });

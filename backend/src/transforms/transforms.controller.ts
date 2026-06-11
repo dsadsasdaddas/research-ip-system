@@ -31,8 +31,8 @@ export class TransformsController {
   constructor(private readonly svc: TransformsService) {}
 
   @Post()
-  create(@Body() dto: CreateTransformDto) {
-    return this.svc.create(dto);
+  create(@Body() dto: CreateTransformDto, @CurrentUser() user: AuthUser) {
+    return this.svc.create(dto, user);
   }
 
   @Get()
@@ -41,17 +41,17 @@ export class TransformsController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.svc.findOne(id);
+  findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.svc.findOne(id, user);
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTransformDto) {
-    return this.svc.update(id, dto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTransformDto, @CurrentUser() user: AuthUser) {
+    return this.svc.update(id, dto, user);
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.svc.remove(id);
+  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.svc.remove(id, user);
   }
 }

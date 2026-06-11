@@ -18,8 +18,12 @@ export class PatentsService {
   ) {}
 
   /** 新增 */
-  create(dto: CreatePatentDto) {
-    return this.repo.save(this.repo.create(dto));
+  create(dto: CreatePatentDto, user: AuthUser) {
+    return this.repo.save(this.repo.create({
+      ...dto,
+      deptId: user.deptId ?? null,
+      createUser: user.username,
+    }));
   }
 
   /** 列表;传了 keyword 就按专利名称模糊搜；部门隔离 + 密级过滤 */
@@ -41,7 +45,8 @@ export class PatentsService {
     }
     if (user) {
       const allowedLevels = getSecretLevels(user);
-      if (!allowedLevels.includes(patent.secretLevel ?? '公开')) {
+      const deptId = getDeptFilter(user);
+      if (!allowedLevels.includes(patent.secretLevel ?? '公开') || (deptId != null && patent.deptId !== deptId)) {
         throw new NotFoundException(`专利 #${id} 不存在`);
       }
     }
@@ -49,15 +54,18 @@ export class PatentsService {
   }
 
   /** 更新 */
-  async update(id: number, dto: UpdatePatentDto) {
-    const patent = await this.findOne(id);
-    Object.assign(patent, dto);
+  async update(id: number, dto: UpdatePatentDto, user?: AuthUser) {
+    const patent = await this.findOne(id, user);
+    const { deptId: ignoredDeptId, createUser: ignoredCreateUser, ...safeDto } = dto;
+    void ignoredDeptId;
+    void ignoredCreateUser;
+    Object.assign(patent, safeDto);
     return this.repo.save(patent);
   }
 
   /** 删除 */
-  async remove(id: number) {
-    const patent = await this.findOne(id);
+  async remove(id: number, user?: AuthUser) {
+    const patent = await this.findOne(id, user);
     await this.repo.remove(patent);
     return { deleted: true, id };
   }

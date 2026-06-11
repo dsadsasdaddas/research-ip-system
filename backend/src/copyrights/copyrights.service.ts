@@ -17,8 +17,12 @@ export class CopyrightsService {
     private readonly repo: Repository<Copyright>,
   ) {}
 
-  create(dto: CreateCopyrightDto) {
-    return this.repo.save(this.repo.create(dto));
+  create(dto: CreateCopyrightDto, user: AuthUser) {
+    return this.repo.save(this.repo.create({
+      ...dto,
+      deptId: user.deptId ?? null,
+      createUser: user.username,
+    }));
   }
 
   /** 列表;部门隔离 + 密级过滤 + LIKE 转义 */
@@ -39,21 +43,25 @@ export class CopyrightsService {
     }
     if (user) {
       const allowedLevels = getSecretLevels(user);
-      if (!allowedLevels.includes(item.secretLevel ?? '公开')) {
+      const deptId = getDeptFilter(user);
+      if (!allowedLevels.includes(item.secretLevel ?? '公开') || (deptId != null && item.deptId !== deptId)) {
         throw new NotFoundException(`软著 #${id} 不存在`);
       }
     }
     return item;
   }
 
-  async update(id: number, dto: UpdateCopyrightDto) {
-    const item = await this.findOne(id);
-    Object.assign(item, dto);
+  async update(id: number, dto: UpdateCopyrightDto, user?: AuthUser) {
+    const item = await this.findOne(id, user);
+    const { deptId: ignoredDeptId, createUser: ignoredCreateUser, ...safeDto } = dto;
+    void ignoredDeptId;
+    void ignoredCreateUser;
+    Object.assign(item, safeDto);
     return this.repo.save(item);
   }
 
-  async remove(id: number) {
-    const item = await this.findOne(id);
+  async remove(id: number, user?: AuthUser) {
+    const item = await this.findOne(id, user);
     await this.repo.remove(item);
     return { deleted: true, id };
   }

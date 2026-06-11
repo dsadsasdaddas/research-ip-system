@@ -31,8 +31,8 @@ export class PatentsController {
   constructor(private readonly patentsService: PatentsService) {}
 
   @Post()
-  create(@Body() dto: CreatePatentDto) {
-    return this.patentsService.create(dto);
+  create(@Body() dto: CreatePatentDto, @CurrentUser() user: AuthUser) {
+    return this.patentsService.create(dto, user);
   }
 
   @Get()
@@ -46,12 +46,12 @@ export class PatentsController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePatentDto) {
-    return this.patentsService.update(id, dto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePatentDto, @CurrentUser() user: AuthUser) {
+    return this.patentsService.update(id, dto, user);
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.patentsService.remove(id);
+  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.patentsService.remove(id, user);
   }
 }

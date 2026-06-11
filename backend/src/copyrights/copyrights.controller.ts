@@ -31,8 +31,8 @@ export class CopyrightsController {
   constructor(private readonly copyrightsService: CopyrightsService) {}
 
   @Post()
-  create(@Body() dto: CreateCopyrightDto) {
-    return this.copyrightsService.create(dto);
+  create(@Body() dto: CreateCopyrightDto, @CurrentUser() user: AuthUser) {
+    return this.copyrightsService.create(dto, user);
   }
 
   @Get()
@@ -46,12 +46,12 @@ export class CopyrightsController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateCopyrightDto) {
-    return this.copyrightsService.update(id, dto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateCopyrightDto, @CurrentUser() user: AuthUser) {
+    return this.copyrightsService.update(id, dto, user);
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.copyrightsService.remove(id);
+  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.copyrightsService.remove(id, user);
   }
 }

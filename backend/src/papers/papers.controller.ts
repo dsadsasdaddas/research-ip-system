@@ -32,8 +32,8 @@ export class PapersController {
   constructor(private readonly papersService: PapersService) {}
 
   @Post()
-  create(@Body() dto: CreatePaperDto) {
-    return this.papersService.create(dto);
+  create(@Body() dto: CreatePaperDto, @CurrentUser() user: AuthUser) {
+    return this.papersService.create(dto, user);
   }
 
   @Get()
@@ -59,11 +59,11 @@ export class PapersController {
 
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePaperDto, @CurrentUser() user: AuthUser) {
-    return this.papersService.update(id, dto);
+    return this.papersService.update(id, dto, user);
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.papersService.remove(id);
+  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.papersService.remove(id, user);
   }
 }

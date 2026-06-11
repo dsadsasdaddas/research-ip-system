@@ -62,11 +62,13 @@ export class FeesService {
   ) {}
 
   async create(dto: CreateFeeDto, user: AuthUser): Promise<FeeWithAlert> {
+    const { deptId: ignoredDeptId, ...safeDto } = dto;
+    void ignoredDeptId;
     const fee = this.repo.create({
-      ...dto,
+      ...safeDto,
       payStatus: dto.payStatus ?? 'pending',
       createUser: user.username,
-      deptId: dto.deptId ?? user.deptId ?? null,
+      deptId: user.deptId ?? null,
     });
     return withAlert(await this.repo.save(fee));
   }
@@ -95,7 +97,9 @@ export class FeesService {
   }
 
   async update(id: number, dto: UpdateFeeDto): Promise<FeeWithAlert | null> {
-    await this.repo.update(id, dto);
+    const { deptId: ignoredDeptId, ...safeDto } = dto;
+    void ignoredDeptId;
+    await this.repo.update(id, safeDto);
     return this.findOne(id);
   }
 
