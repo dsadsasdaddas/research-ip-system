@@ -38,6 +38,7 @@ function logout() { auth.logout(); router.push('/login') }
         <el-menu-item index="/search"><el-icon><Search /></el-icon><span>全文检索</span></el-menu-item>
         <el-menu-item index="/dashboard"><el-icon><DataAnalysis /></el-icon><span>统计看板</span></el-menu-item>
         <el-menu-item index="/audit-logs"><el-icon><List /></el-icon><span>操作日志</span></el-menu-item>
+        <el-menu-item index="/integrations"><el-icon><Setting /></el-icon><span>接口配置</span></el-menu-item>
       </el-menu>
     </el-aside>
 

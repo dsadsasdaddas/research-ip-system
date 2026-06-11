@@ -153,4 +153,31 @@ JWT_SECRET=research-mis-secret-2024
   2. Rust search addon 构建
   3. Node/TypeScript 调用 Rust addon 的 smoke test
   4. 搜索关键词（如“深度学习”）能返回预期结果
-- 在 Rust 搜索稳定前，NestJS 搜索接口保留当前 MySQL 搜索作为 fallback。
+- Rust 搜索接口必须走 TypeScript → Rust，不允许静默 fallback 到 MySQL；Rust addon 缺失或调用失败时直接报错，方便发现问题。
+
+## 简版接口协议（必须遵守）
+
+1. 所有后端接口统一走 `/api/xxx`，登录接口除外也仍在 `/api/auth/login`。
+2. 除登录外，所有接口必须使用 JWT：`Authorization: Bearer <token>`。
+3. 业务归属字段由后端根据 `AuthUser` 注入，前端不得决定：
+   - `deptId = user.deptId`
+   - `createUser = user.username`
+   - 新增/更新 DTO 中如保留 `deptId/createUser`，Service 层也必须忽略前端传值。
+4. 列表接口逐步统一为分页结构：
+   ```json
+   { "items": [], "total": 0, "page": 1, "pageSize": 20 }
+   ```
+   旧接口暂可返回数组，但新增接口优先使用分页结构。
+5. 错误响应使用 NestJS 默认格式：`statusCode / message / error`。
+6. 权限规则统一：
+   - `researcher / dept_secretary / dept_admin` 只能访问本部门数据；
+   - `leader / secret_admin / auditor / sys_admin` 可访问全院数据；
+   - `auditor` 只读，禁止 `POST/PATCH/DELETE`。
+7. Rust 搜索接口返回必须包含：`engine: "rust"`、`elapsedMs`、`total`、`items`。
+
+
+## 确定接口清单
+
+- 详细接口协议固定记录在 `docs/API_PROTOCOL.md`。
+- 当前确定接口包括：`auth/login`、成果登记 CRUD（papers/patents/copyrights/transforms）、`papers/doi-lookup`、Rust 搜索 `/api/search`、费用 `/api/fees`、提醒 `/api/reminders`、附件 `/api/attachments`、统计 `/api/stats`、审计日志 `/api/audit-logs`、用户管理 `/api/users`、外部接口配置中心 `/api/integrations`（前端路由 `/integrations`）。
+- 尚未实现的审批、数据字典、报表导出、备份恢复、涉密授权、检索日志接口，必须实现时再补充协议，不要临时随意命名。

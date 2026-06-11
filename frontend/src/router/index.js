@@ -7,6 +7,7 @@ import FeesView from '../views/FeesView.vue'
 import RemindersView from '../views/RemindersView.vue'
 import SearchView from '../views/SearchView.vue'
 import AuditLogView from '../views/AuditLogView.vue'
+import IntegrationsView from '../views/IntegrationsView.vue'
 import paper from '../modules/paper'
 import patent from '../modules/patent'
 import copyright from '../modules/copyright'
@@ -28,6 +29,7 @@ const routes = [
       { path: 'search',     component: SearchView,   meta: { title: '全文检索' } },
       { path: 'dashboard',  component: DashboardView,meta: { title: '统计看板' } },
       { path: 'audit-logs', component: AuditLogView, meta: { title: '操作日志' } },
+      { path: 'integrations', component: IntegrationsView, meta: { title: '接口配置中心' } },
     ],
   },
 ]
