@@ -17,6 +17,8 @@ import { RemindersModule } from './reminders/reminders.module';
 import { EmailModule } from './email/email.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { SearchModule } from './search/search.module';
+import { IntegrationsModule } from './integrations/integrations.module';
+import { DictionariesModule } from './dictionaries/dictionaries.module';
 
 @Module({
   imports: [
@@ -29,7 +31,7 @@ import { SearchModule } from './search/search.module';
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       autoLoadEntities: true,
-      synchronize: true,
+      synchronize: process.env.TYPEORM_SYNC === 'true',
     }),
     PapersModule,
     PatentsModule,
@@ -45,6 +47,8 @@ import { SearchModule } from './search/search.module';
     EmailModule,
     AttachmentsModule,
     SearchModule,
+    IntegrationsModule,
+    DictionariesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
