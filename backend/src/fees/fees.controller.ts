@@ -45,7 +45,7 @@ export class FeesController {
   @UseGuards(RolesGuard)
   @Roles('dept_admin', 'sys_admin', 'dept_secretary')
   generatePlans(@Body('patents') patents: PatentForPlan[], @CurrentUser() user: AuthUser) {
-    return this.svc.generatePlansFromPatents(patents ?? []);
+    return this.svc.generatePlansFromPatents(patents ?? [], user);
   }
 
   @Get(':id')

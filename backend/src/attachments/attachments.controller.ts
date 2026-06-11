@@ -51,15 +51,22 @@ export class AttachmentsController {
   @Get(':id/download')
   async download(@Param('id') id: string, @Res() res: Response, @CurrentUser() user: AuthUser) {
     const att = await this.svc.findOne(+id);
-    this.svc.checkAccess(att, user);
+    await this.svc.checkAccess(att, user);
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(att.originalName)}"`);
     res.setHeader('Content-Type', att.mimeType || 'application/octet-stream');
     const stream = fs.createReadStream(att.filePath);
+    stream.on('error', () => {
+      if (!res.headersSent) {
+        res.status(500).json({ message: '文件读取失败' });
+      }
+    });
     stream.pipe(res);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+  async remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    const att = await this.svc.findOne(+id);
+    this.svc.checkAccess(att, user);
     return this.svc.remove(+id);
   }
 }

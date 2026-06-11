@@ -16,9 +16,9 @@ const INTERNAL_VISIBLE_ROLES: UserRole[] = [
 
 /**
  * 根据当前用户角色返回允许查看的密级列表。
- * - sys_admin / secret_admin → 全部密级
- * - leader / auditor / dept_admin / dept_secretary → 公开 + 内部
- * - researcher → 仅公开
+ * - sys_admin / secret_admin → 全部密级（公开 + 内部 + 涉密）
+ * - leader / auditor → 公开 + 内部
+ * - dept_admin / dept_secretary / researcher → 仅公开
  */
 export function getSecretLevels(user: AuthUser): string[] {
   if (SECRET_VISIBLE_ROLES.includes(user.role)) {

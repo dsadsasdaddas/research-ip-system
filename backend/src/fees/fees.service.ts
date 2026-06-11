@@ -122,10 +122,13 @@ export class FeesService {
     };
   }
 
-  async generatePlansFromPatents(patents: PatentForPlan[]): Promise<{ generated: number }> {
+  async generatePlansFromPatents(patents: PatentForPlan[], user: AuthUser): Promise<{ generated: number }> {
+    const userDeptId = getDeptFilter(user);
     let created = 0;
     for (const p of patents) {
       if (!p.nextFeeDate) continue;
+      // 部门隔离：非全院用户只能为本部门专利生成缴费计划
+      if (userDeptId != null && p.deptId !== userDeptId) continue;
       const exists = await this.repo.findOne({
         where: { relationType: 'patent', relationId: p.id, dueDate: p.nextFeeDate },
       });
