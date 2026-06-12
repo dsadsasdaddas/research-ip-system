@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -37,14 +48,19 @@ export class DictionariesController {
   @Patch('types/:id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.SYS_ADMIN)
-  updateType(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateDictionaryTypeDto): Promise<DictionaryType> {
+  updateType(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateDictionaryTypeDto,
+  ): Promise<DictionaryType> {
     return this.svc.updateType(id, dto);
   }
 
   @Delete('types/:id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.SYS_ADMIN)
-  removeType(@Param('id', ParseIntPipe) id: number): Promise<{ deleted: true; id: number }> {
+  removeType(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ deleted: true; id: number }> {
     return this.svc.removeType(id);
   }
 
@@ -68,14 +84,19 @@ export class DictionariesController {
   @Patch('items/:id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.SYS_ADMIN)
-  updateItem(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateDictionaryItemDto): Promise<DictionaryItem> {
+  updateItem(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateDictionaryItemDto,
+  ): Promise<DictionaryItem> {
     return this.svc.updateItem(id, dto);
   }
 
   @Delete('items/:id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.SYS_ADMIN)
-  removeItem(@Param('id', ParseIntPipe) id: number): Promise<{ deleted: true; id: number }> {
+  removeItem(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ deleted: true; id: number }> {
     return this.svc.removeItem(id);
   }
 }

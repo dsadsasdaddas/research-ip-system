@@ -1,0 +1,41 @@
+# =============================================================================
+# 非侵入式本地验证覆盖文件(Docker Desktop 已启动时使用)
+# -----------------------------------------------------------------------------
+# 为什么需要它:基础 docker-compose.yml 把 mysql/backend/frontend 映射到宿主
+#   3306 / 3001 / 80。但本机已有:
+#     - 原生 MySQL 占 3306(后端 dev 正在用)
+#     - 后端 dev(nest start:dev)占 3001
+#   直接 `docker compose up` 会因端口冲突启动失败。本文件用 `!override` 把
+#   【宿主】端口列表整体替换(compose 默认是追加,会同时占住原端口,故必须 override),
+#   容器内部端口不变,服务间走 compose 网络互访不受影响。从而能在不干扰现有 dev
+#   环境的前提下,对全栈镜像做一次冒烟验证。
+#
+# 用法(先启动 Docker Desktop,等右下角图标变绿):
+#   # 1) 构建并起(首次会镜像内编译 Rust,约 5-10 分钟,拉镜像另算)
+#   docker compose -f docker-compose.yml -f docker-compose.verify.yml up -d --build
+#
+#   # 2) 看 3 个容器是否都 Up + healthy
+#   docker compose -f docker-compose.yml -f docker-compose.verify.yml ps
+#
+#   # 3) 冒烟:前端首页 / 后端登录(经 nginx 反代)
+#   curl -i http://localhost:8081/
+#   curl -i -X POST http://localhost:8081/api/auth/login \
+#         -H "Content-Type: application/json" -d '{"username":"admin","password":"Admin@123"}'
+#   docker exec research-backend node -e "require('./native/search-engine/index.node');console.log('rust addon OK')"
+#
+#   # 4) 看日志(排查构建/运行问题)
+#   docker compose -f docker-compose.yml -f docker-compose.verify.yml logs -f backend
+#
+#   # 5) 收尾(数据保留在 mysql-data 卷,下次复用)
+#   docker compose -f docker-compose.yml -f docker-compose.verify.yml down
+# =============================================================================
+services:
+  mysql:
+    ports: !override
+      - "3307:3306" # 宿主 3307 -> 容器 3306(避开原生 MySQL)
+  backend:
+    ports: !override
+      - "3002:3001" # 宿主 3002 -> 容器 3001(避开后端 dev)
+  frontend:
+    ports: !override
+      - "8081:80" # 宿主 8081 -> 容器 80(避开 5173/8080)

@@ -22,7 +22,9 @@ interface RustSearchNativeModule {
   search(docsJson: string, keyword: string): string;
 }
 
-function isRustSearchNativeModule(value: unknown): value is RustSearchNativeModule {
+function isRustSearchNativeModule(
+  value: unknown,
+): value is RustSearchNativeModule {
   if (typeof value !== 'object' || value === null) return false;
   const candidate = value as { search?: unknown };
   return typeof candidate.search === 'function';
@@ -33,7 +35,9 @@ function isRustSearchHit(value: unknown): value is RustSearchHit {
   const candidate = value as Partial<RustSearchHit>;
   return (
     typeof candidate.id === 'number' &&
-    (candidate.type === 'paper' || candidate.type === 'patent' || candidate.type === 'copyright') &&
+    (candidate.type === 'paper' ||
+      candidate.type === 'patent' ||
+      candidate.type === 'copyright') &&
     typeof candidate.title === 'string' &&
     typeof candidate.score === 'number'
   );
@@ -45,7 +49,12 @@ export class RustSearchAdapter {
 
   constructor() {
     const requireNative = createRequire(__filename);
-    const addonPath = join(process.cwd(), 'native', 'search-engine', 'index.node');
+    const addonPath = join(
+      process.cwd(),
+      'native',
+      'search-engine',
+      'index.node',
+    );
     const loadedModule: unknown = requireNative(addonPath);
 
     if (!isRustSearchNativeModule(loadedModule)) {

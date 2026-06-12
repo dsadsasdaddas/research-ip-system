@@ -20,61 +20,153 @@ export class Copyright {
   @Column({ length: 500, comment: '软著名称' })
   name!: string;
 
-  @Column({ type: 'varchar', name: 'copyright_owner', length: 255, nullable: true, comment: '著作权人' })
+  @Column({
+    type: 'varchar',
+    name: 'copyright_owner',
+    length: 255,
+    nullable: true,
+    comment: '著作权人',
+  })
   copyrightOwner!: string | null;
 
-  @Column({ type: 'varchar', name: 'registration_no', length: 100, nullable: true, comment: '登记号' })
+  @Column({
+    type: 'varchar',
+    name: 'registration_no',
+    length: 100,
+    nullable: true,
+    comment: '登记号',
+  })
   registrationNo!: string | null;
 
-  @Column({ type: 'varchar', name: 'publish_date', length: 20, nullable: true, comment: '首次发表日期' })
+  @Column({
+    type: 'varchar',
+    name: 'publish_date',
+    length: 20,
+    nullable: true,
+    comment: '首次发表日期',
+  })
   publishDate!: string | null;
 
-  @Column({ type: 'varchar', name: 'register_date', length: 20, nullable: true, comment: '登记日期' })
+  @Column({
+    type: 'varchar',
+    name: 'register_date',
+    length: 20,
+    nullable: true,
+    comment: '登记日期',
+  })
   registerDate!: string | null;
 
   @Column({ type: 'varchar', length: 50, nullable: true, comment: '版本号' })
   version!: string | null;
 
-  @Column({ type: 'varchar', name: 'software_type', length: 50, nullable: true, comment: '软件类别' })
+  @Column({
+    type: 'varchar',
+    name: 'software_type',
+    length: 50,
+    nullable: true,
+    comment: '软件类别',
+  })
   softwareType!: string | null;
 
   // ========== 扩展字段(§3.1.3)==========
 
-  @Column({ name: 'software_intro', type: 'text', nullable: true, comment: '软件功能简介' })
+  @Column({
+    name: 'software_intro',
+    type: 'text',
+    nullable: true,
+    comment: '软件功能简介',
+  })
   softwareIntro!: string | null;
 
-  @Column({ type: 'varchar', name: 'run_env', length: 255, nullable: true, comment: '运行环境' })
+  @Column({
+    type: 'varchar',
+    name: 'run_env',
+    length: 255,
+    nullable: true,
+    comment: '运行环境',
+  })
   runEnv!: string | null;
 
-  @Column({ type: 'varchar', name: 'cooperate_unit', length: 255, nullable: true, comment: '合作单位' })
+  @Column({
+    type: 'varchar',
+    name: 'cooperate_unit',
+    length: 255,
+    nullable: true,
+    comment: '合作单位',
+  })
   cooperateUnit!: string | null;
 
-  @Column({ type: 'varchar', name: 'depend_project', length: 255, nullable: true, comment: '依托项目' })
+  @Column({
+    type: 'varchar',
+    name: 'depend_project',
+    length: 255,
+    nullable: true,
+    comment: '依托项目',
+  })
   dependProject!: string | null;
 
   // ========== 归属与审计(§6.2 + §2 部门数据隔离)==========
 
-  @Column({ type: 'varchar', name: 'secret_level', length: 20, default: '公开', comment: '密级:公开/内部/涉密' })
+  @Column({
+    type: 'varchar',
+    name: 'secret_level',
+    length: 20,
+    default: '公开',
+    comment: '密级:公开/内部/涉密',
+  })
   secretLevel!: string | null;
 
-  @Column({ name: 'dept_id', type: 'int', nullable: true, comment: '所属部门ID(用于部门数据隔离)' })
+  @Column({
+    name: 'dept_id',
+    type: 'int',
+    nullable: true,
+    comment: '所属部门ID(用于部门数据隔离)',
+  })
   deptId!: number | null;
 
-  @Column({ type: 'varchar', name: 'create_user', length: 100, nullable: true, comment: '登记人' })
+  @Column({
+    type: 'varchar',
+    name: 'create_user',
+    length: 100,
+    nullable: true,
+    comment: '登记人',
+  })
   createUser!: string | null;
 
   // ========== 审批与归档 ==========
 
-  @Column({ type: 'varchar', name: 'approval_status', length: 30, default: 'draft', comment: '审批状态' })
+  @Column({
+    type: 'varchar',
+    name: 'approval_status',
+    length: 30,
+    default: 'draft',
+    comment: '审批状态',
+  })
   approvalStatus!: string;
 
-  @Column({ type: 'varchar', name: 'archive_status', length: 30, default: 'normal', comment: '归档状态' })
+  @Column({
+    type: 'varchar',
+    name: 'archive_status',
+    length: 30,
+    default: 'normal',
+    comment: '归档状态',
+  })
   archiveStatus!: string;
 
-  @Column({ type: 'text', name: 'cancel_reason', nullable: true, comment: '注销/作废原因' })
+  @Column({
+    type: 'text',
+    name: 'cancel_reason',
+    nullable: true,
+    comment: '注销/作废原因',
+  })
   cancelReason!: string | null;
 
-  @Column({ name: 'is_deleted', type: 'boolean', default: false, comment: '软删除标记' })
+  @Column({
+    name: 'is_deleted',
+    type: 'boolean',
+    default: false,
+    comment: '软删除标记',
+  })
   isDeleted!: boolean;
 
   @Column({ type: 'varchar', length: 255, nullable: true, comment: '备注' })

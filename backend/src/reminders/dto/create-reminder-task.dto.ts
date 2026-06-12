@@ -1,8 +1,20 @@
-import { IsString, IsOptional, IsNumber, IsBoolean, IsIn } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsBoolean,
+  IsIn,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
-const REMIND_LEVELS  = ['普通', '重要', '紧急'] as const;
-const TARGET_TYPES   = ['paper', 'patent', 'copyright', 'transform', 'rule'] as const;
+const REMIND_LEVELS = ['普通', '重要', '紧急'] as const;
+const TARGET_TYPES = [
+  'paper',
+  'patent',
+  'copyright',
+  'transform',
+  'rule',
+] as const;
 
 export class CreateReminderTaskDto {
   @IsString() title!: string;

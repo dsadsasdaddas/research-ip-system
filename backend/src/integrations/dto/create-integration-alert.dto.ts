@@ -4,20 +4,24 @@ export class CreateIntegrationAlertDto {
   @IsString()
   integrationType!: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   alertLevel?: string;
 
   @IsString()
   title!: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   content?: string | null;
 }
 
 export class HandleIntegrationAlertDto {
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   status?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   handlerName?: string | null;
 }

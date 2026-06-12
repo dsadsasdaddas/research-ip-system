@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { PageResult } from '../common/types';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -10,10 +21,16 @@ import { CreateIntegrationConfigDto } from './dto/create-integration-config.dto'
 import { IntegrationLogsQueryDto } from './dto/integration-logs-query.dto';
 import { UpdateIntegrationConfigDto } from './dto/update-integration-config.dto';
 import { CreateIntegrationMappingDto } from './dto/create-integration-mapping.dto';
-import { CreateIntegrationAlertDto, HandleIntegrationAlertDto } from './dto/create-integration-alert.dto';
+import {
+  CreateIntegrationAlertDto,
+  HandleIntegrationAlertDto,
+} from './dto/create-integration-alert.dto';
 import { IntegrationConfig } from './entities/integration-config.entity';
 import { IntegrationLog } from './entities/integration-log.entity';
-import { IntegrationTestResult, IntegrationsService } from './integrations.service';
+import {
+  IntegrationTestResult,
+  IntegrationsService,
+} from './integrations.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.SYS_ADMIN)
@@ -39,7 +56,10 @@ export class IntegrationsController {
   }
 
   @Patch('configs/:id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateIntegrationConfigDto): Promise<IntegrationConfig> {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateIntegrationConfigDto,
+  ): Promise<IntegrationConfig> {
     return this.svc.update(id, dto);
   }
 
@@ -49,12 +69,16 @@ export class IntegrationsController {
   }
 
   @Delete('configs/:id')
-  remove(@Param('id', ParseIntPipe) id: number): Promise<{ deleted: true; id: number }> {
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ deleted: true; id: number }> {
     return this.svc.remove(id);
   }
 
   @Get('logs')
-  logs(@Query() query: IntegrationLogsQueryDto): Promise<PageResult<IntegrationLog>> {
+  logs(
+    @Query() query: IntegrationLogsQueryDto,
+  ): Promise<PageResult<IntegrationLog>> {
     return this.svc.findLogs(query);
   }
 
@@ -87,7 +111,12 @@ export class IntegrationsController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ) {
-    return this.svc.findAlerts(integrationType, status, page ? +page : undefined, pageSize ? +pageSize : undefined);
+    return this.svc.findAlerts(
+      integrationType,
+      status,
+      page ? +page : undefined,
+      pageSize ? +pageSize : undefined,
+    );
   }
 
   @Post('alerts')

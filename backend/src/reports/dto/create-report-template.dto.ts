@@ -10,15 +10,19 @@ export class CreateReportTemplateDto {
   @IsString()
   reportType!: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   configJson?: string | null;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   scope?: string;
 
-  @IsOptional() @IsBoolean()
+  @IsOptional()
+  @IsBoolean()
   isActive?: boolean;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   createUser?: string | null;
 }

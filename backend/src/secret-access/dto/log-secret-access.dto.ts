@@ -2,30 +2,39 @@ import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class LogSecretAccessDto {
-  @IsOptional() @Type(() => Number) @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
   grantId?: number | null;
 
   @IsString()
   businessType!: string;
 
-  @Type(() => Number) @IsNumber()
+  @Type(() => Number)
+  @IsNumber()
   businessId!: number;
 
-  @IsOptional() @Type(() => Number) @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
   userId?: number | null;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   username?: string | null;
 
   @IsString()
   action!: string;
 
-  @IsOptional() @IsBoolean()
+  @IsOptional()
+  @IsBoolean()
   success?: boolean;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   ip?: string | null;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   reason?: string | null;
 }

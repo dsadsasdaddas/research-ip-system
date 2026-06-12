@@ -55,7 +55,9 @@ describe('Security (e2e) — 鉴权与授权矩阵', () => {
   ];
 
   it.each(protectedRoutes)('无 token: %s %s → 401', async (method, path) => {
-    const res = await (request(app.getHttpServer()) as any)[method](path).send({});
+    const res = await (request(app.getHttpServer()) as any)
+      [method](path)
+      .send({});
     expect(res.status).toBe(401);
   });
 
@@ -63,7 +65,9 @@ describe('Security (e2e) — 鉴权与授权矩阵', () => {
   describe('用户管理接口仅限 sys_admin', () => {
     it('sys_admin(admin)GET /api/users → 200', async () => {
       const token = await login(app, 'admin', 'Admin@123');
-      const res = await request(app.getHttpServer()).get('/api/users').set(auth(token));
+      const res = await request(app.getHttpServer())
+        .get('/api/users')
+        .set(auth(token));
       expect(res.status).toBe(200);
     });
 
@@ -74,7 +78,9 @@ describe('Security (e2e) — 鉴权与授权矩阵', () => {
       ['auditor', 'auditor'],
     ])('非系统管理员 %s 访问 GET /api/users → 403', async (_role, username) => {
       const token = await login(app, username, 'Test@123');
-      const res = await request(app.getHttpServer()).get('/api/users').set(auth(token));
+      const res = await request(app.getHttpServer())
+        .get('/api/users')
+        .set(auth(token));
       expect(res.status).toBe(403);
     });
 
@@ -83,7 +89,11 @@ describe('Security (e2e) — 鉴权与授权矩阵', () => {
       const res = await request(app.getHttpServer())
         .post('/api/users')
         .set(auth(token))
-        .send({ username: 'should_not_exist', password: 'Abc@123456', role: 'sys_admin' });
+        .send({
+          username: 'should_not_exist',
+          password: 'Abc@123456',
+          role: 'sys_admin',
+        });
       expect(res.status).toBe(403);
     });
   });
@@ -94,21 +104,31 @@ describe('Security (e2e) — 鉴权与授权矩阵', () => {
       ['auditor', 'auditor'],
       ['sys_admin', 'admin'],
       ['leader', 'leader'],
-    ])('允许角色 %s 访问 GET /api/audit-logs → 200', async (_role, username) => {
-      const password = username === 'admin' ? 'Admin@123' : 'Test@123';
-      const token = await login(app, username, password);
-      const res = await request(app.getHttpServer()).get('/api/audit-logs').set(auth(token));
-      expect(res.status).toBe(200);
-    });
+    ])(
+      '允许角色 %s 访问 GET /api/audit-logs → 200',
+      async (_role, username) => {
+        const password = username === 'admin' ? 'Admin@123' : 'Test@123';
+        const token = await login(app, username, password);
+        const res = await request(app.getHttpServer())
+          .get('/api/audit-logs')
+          .set(auth(token));
+        expect(res.status).toBe(200);
+      },
+    );
 
     it.each([
       ['researcher', 'cs_user'],
       ['dept_secretary', 'cs_sec'],
       ['secret_admin', 'secret'],
-    ])('禁止角色 %s 访问 GET /api/audit-logs → 403', async (_role, username) => {
-      const token = await login(app, username, 'Test@123');
-      const res = await request(app.getHttpServer()).get('/api/audit-logs').set(auth(token));
-      expect(res.status).toBe(403);
-    });
+    ])(
+      '禁止角色 %s 访问 GET /api/audit-logs → 403',
+      async (_role, username) => {
+        const token = await login(app, username, 'Test@123');
+        const res = await request(app.getHttpServer())
+          .get('/api/audit-logs')
+          .set(auth(token));
+        expect(res.status).toBe(403);
+      },
+    );
   });
 });

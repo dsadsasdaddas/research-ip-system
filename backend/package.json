@@ -18,9 +18,10 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:e2e:cov": "jest --config ./test/jest-e2e-cov.json",
     "build:rust-search": "cd native/search-engine && cargo build --release && node ../../scripts/build-rust-search.js",
     "test:rust-search": "npm run build:rust-search && node scripts/test-rust-search.js",
-    "ci": "npm run build && npm run test:rust-search"
+    "ci": "npm run build && npm run test:cov && npm run test:rust-search"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -36,9 +37,12 @@
     "@types/nodemailer": "^8.0.0",
     "@types/pdfkit": "^0.17.6",
     "bcryptjs": "^3.0.3",
+    "cache-manager": "^5.7.6",
+    "cache-manager-ioredis-yet": "^2.1.2",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "exceljs": "^4.4.0",
+    "ioredis": "^5.11.1",
     "multer": "^2.1.1",
     "mysql2": "^3.22.4",
     "nodemailer": "^8.0.10",
@@ -88,8 +92,32 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.ts",
+      "!**/*.spec.ts",
+      "!**/*.entity.ts",
+      "!**/*.dto.ts",
+      "!**/*.module.ts",
+      "!**/main.ts",
+      "!**/app.module.ts",
+      "!**/testing/**"
     ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/"
+    ],
+    "coverageReporters": [
+      "text",
+      "text-summary",
+      "lcov",
+      "html"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "statements": 100,
+        "branches": 85,
+        "functions": 100,
+        "lines": 100
+      }
+    },
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }

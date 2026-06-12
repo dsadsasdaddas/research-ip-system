@@ -8,7 +8,14 @@ import { ApprovalsService } from './approvals.service';
 import { ApprovalsController } from './approvals.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ApprovalFlow, ApprovalFlowNode, ApprovalInstance, ApprovalRecord])],
+  imports: [
+    TypeOrmModule.forFeature([
+      ApprovalFlow,
+      ApprovalFlowNode,
+      ApprovalInstance,
+      ApprovalRecord,
+    ]),
+  ],
   providers: [ApprovalsService],
   controllers: [ApprovalsController],
   exports: [ApprovalsService],

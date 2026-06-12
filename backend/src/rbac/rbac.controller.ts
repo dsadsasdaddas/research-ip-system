@@ -1,6 +1,15 @@
 import {
   BadRequestException,
-  Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import { RbacService } from './rbac.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -36,7 +45,10 @@ export class RbacController {
   }
 
   @Patch('roles/:id')
-  updateRole(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRoleDto) {
+  updateRole(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateRoleDto,
+  ) {
     return this.svc.updateRole(id, dto);
   }
 
@@ -65,7 +77,10 @@ export class RbacController {
   }
 
   @Get('check-permission')
-  async checkPermission(@Query('roleCode') roleCode: string, @Query('permissionCode') permissionCode: string) {
+  async checkPermission(
+    @Query('roleCode') roleCode: string,
+    @Query('permissionCode') permissionCode: string,
+  ) {
     // 参数缺失时 TypeORM 会忽略该条件导致 count 恒 > 0 → 权限绕过,必须先校验
     if (!roleCode || !permissionCode) {
       throw new BadRequestException('roleCode 和 permissionCode 不能为空');

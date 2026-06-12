@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { RemindersService, ReminderTaskListQuery } from './reminders.service';
 import { CreateReminderTaskDto } from './dto/create-reminder-task.dto';
 import { CreateReminderRuleDto } from './dto/create-reminder-rule.dto';
@@ -15,13 +25,18 @@ export class RemindersController {
   // ===== 任务 =====
   @Get('tasks')
   listTasks(
-    @Query('keyword')     keyword?: string,
+    @Query('keyword') keyword?: string,
     @Query('remindLevel') remindLevel?: string,
-    @Query('isConfirm')   isConfirm?: string,
-    @CurrentUser()        user?: AuthUser,
+    @Query('isConfirm') isConfirm?: string,
+    @CurrentUser() user?: AuthUser,
   ) {
     const deptId = user ? getDeptFilter(user) : undefined;
-    const query: ReminderTaskListQuery = { keyword, remindLevel, isConfirm, deptId };
+    const query: ReminderTaskListQuery = {
+      keyword,
+      remindLevel,
+      isConfirm,
+      deptId,
+    };
     return this.svc.listTasks(query);
   }
 
@@ -31,12 +46,18 @@ export class RemindersController {
   }
 
   @Post('tasks')
-  createTask(@Body() dto: CreateReminderTaskDto, @CurrentUser() user: AuthUser) {
+  createTask(
+    @Body() dto: CreateReminderTaskDto,
+    @CurrentUser() user: AuthUser,
+  ) {
     return this.svc.createTask(dto, user);
   }
 
   @Patch('tasks/:id')
-  updateTask(@Param('id') id: string, @Body() dto: Partial<CreateReminderTaskDto>) {
+  updateTask(
+    @Param('id') id: string,
+    @Body() dto: Partial<CreateReminderTaskDto>,
+  ) {
     return this.svc.updateTask(+id, dto);
   }
 
@@ -57,16 +78,25 @@ export class RemindersController {
 
   // ===== 规则 =====
   @Get('rules')
-  listRules() { return this.svc.listRules(); }
+  listRules() {
+    return this.svc.listRules();
+  }
 
   @Post('rules')
-  createRule(@Body() dto: CreateReminderRuleDto) { return this.svc.createRule(dto); }
+  createRule(@Body() dto: CreateReminderRuleDto) {
+    return this.svc.createRule(dto);
+  }
 
   @Patch('rules/:id')
-  updateRule(@Param('id') id: string, @Body() dto: Partial<CreateReminderRuleDto>) {
+  updateRule(
+    @Param('id') id: string,
+    @Body() dto: Partial<CreateReminderRuleDto>,
+  ) {
     return this.svc.updateRule(+id, dto);
   }
 
   @Delete('rules/:id')
-  deleteRule(@Param('id') id: string) { return this.svc.deleteRule(+id); }
+  deleteRule(@Param('id') id: string) {
+    return this.svc.deleteRule(+id);
+  }
 }

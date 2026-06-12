@@ -1,5 +1,8 @@
 import {
-  Injectable, NestInterceptor, ExecutionContext, CallHandler,
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -22,38 +25,52 @@ interface HttpResponse {
 }
 
 const MODULE_MAP: Record<string, string> = {
-  papers: 'papers', patents: 'patents', copyrights: 'copyrights',
-  transforms: 'transforms', fees: 'fees', reminders: 'reminders',
-  attachments: 'attachments', users: 'users', departments: 'departments',
-  'audit-logs': 'audit-logs', 'search-logs': 'search-logs',
-  notifications: 'notifications', approvals: 'approvals',
-  reports: 'reports', rbac: 'rbac', integrations: 'integrations',
-  dictionaries: 'dictionaries', 'secret-access': 'secret-access',
+  papers: 'papers',
+  patents: 'patents',
+  copyrights: 'copyrights',
+  transforms: 'transforms',
+  fees: 'fees',
+  reminders: 'reminders',
+  attachments: 'attachments',
+  users: 'users',
+  departments: 'departments',
+  'audit-logs': 'audit-logs',
+  'search-logs': 'search-logs',
+  notifications: 'notifications',
+  approvals: 'approvals',
+  reports: 'reports',
+  rbac: 'rbac',
+  integrations: 'integrations',
+  dictionaries: 'dictionaries',
+  'secret-access': 'secret-access',
   backup: 'backup',
 };
 
-function guessModule(path: string): string {
+export function guessModule(path: string): string {
   const seg = path.split('/').filter(Boolean);
-  return MODULE_MAP[seg[1] ?? seg[0] ?? ''] ?? (seg[1] ?? '');
+  return MODULE_MAP[seg[1] ?? seg[0] ?? ''] ?? seg[1] ?? '';
 }
 
-function guessAction(method: string): string {
-  if (method === 'POST')   return 'create';
+export function guessAction(method: string): string {
+  if (method === 'POST') return 'create';
   if (method === 'DELETE') return 'delete';
   if (method === 'PATCH' || method === 'PUT') return 'update';
   return method.toLowerCase();
 }
 
 /** 需要脱敏的 key 关键词（不区分大小写） */
-const SENSITIVE_KEYS = /password|secret|token|apikey|api_key|private|credential/i;
+const SENSITIVE_KEYS =
+  /password|secret|token|apikey|api_key|private|credential/i;
 
 /** 递归脱敏：遍历所有层级的 key，匹配敏感词的值替换为 *** */
-function sanitize(body: unknown): string {
+export function sanitize(body: unknown): string {
   if (!body) return '';
   try {
     const redacted = redact(body);
     return JSON.stringify(redacted).slice(0, 2000);
-  } catch { return ''; }
+  } catch {
+    return '';
+  }
 }
 
 function redact(value: unknown): unknown {
@@ -71,9 +88,7 @@ function redact(value: unknown): unknown {
 
 @Injectable()
 export class AuditLogInterceptor implements NestInterceptor {
-  constructor(
-    @InjectRepository(AuditLog) private repo: Repository<AuditLog>,
-  ) {}
+  constructor(@InjectRepository(AuditLog) private repo: Repository<AuditLog>) {}
 
   intercept(ctx: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = ctx.switchToHttp().getRequest<HttpRequest>();
@@ -83,24 +98,25 @@ export class AuditLogInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const user   = req.user;
-    const path   = req.url ?? req.path ?? '';
-    const rawIp  = req.ip ?? req.headers['x-forwarded-for'] ?? '';
-    const ip     = Array.isArray(rawIp) ? rawIp[0] : rawIp;
+    const user = req.user;
+    const path = req.url ?? req.path ?? '';
+    const rawIp = req.ip ?? req.headers['x-forwarded-for'] ?? '';
+    const ip = Array.isArray(rawIp) ? rawIp[0] : rawIp;
 
     return next.handle().pipe(
       tap(async () => {
         try {
           const log = this.repo.create({
-            userId:      user?.id ?? null,
-            username:    user?.username ?? null,
-            realName:    user?.realName ?? null,
+            userId: user?.id ?? null,
+            username: user?.username ?? null,
+            realName: user?.realName ?? null,
             method,
             path,
-            module:      guessModule(path),
-            action:      guessAction(method),
+            module: guessModule(path),
+            action: guessAction(method),
             requestBody: sanitize(req.body),
-            statusCode:  ctx.switchToHttp().getResponse<HttpResponse>().statusCode,
+            statusCode: ctx.switchToHttp().getResponse<HttpResponse>()
+              .statusCode,
             ip,
           });
           await this.repo.save(log);

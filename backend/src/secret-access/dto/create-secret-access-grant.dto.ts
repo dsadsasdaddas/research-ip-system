@@ -5,24 +5,31 @@ export class CreateSecretAccessGrantDto {
   @IsString()
   businessType!: string;
 
-  @Type(() => Number) @IsNumber()
+  @Type(() => Number)
+  @IsNumber()
   businessId!: number;
 
-  @Type(() => Number) @IsNumber()
+  @Type(() => Number)
+  @IsNumber()
   grantUserId!: number;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   grantUsername?: string | null;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   grantScope?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   startTime?: string | null;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   endTime?: string | null;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   grantReason?: string | null;
 }

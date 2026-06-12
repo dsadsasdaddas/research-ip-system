@@ -1,7 +1,14 @@
 import { IsString, IsOptional, IsBoolean, IsIn } from 'class-validator';
 import { Transform } from 'class-transformer';
 
-const BUSINESS_TYPES = ['paper', 'patent', 'copyright', 'transform', 'fee', 'secret'] as const;
+const BUSINESS_TYPES = [
+  'paper',
+  'patent',
+  'copyright',
+  'transform',
+  'fee',
+  'secret',
+] as const;
 
 export class UpdateFlowDto {
   @IsOptional()

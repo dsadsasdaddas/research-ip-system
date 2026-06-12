@@ -11,13 +11,17 @@ import { EmailService } from '../email/email.service';
 @Injectable()
 export class NotificationsService {
   constructor(
-    @InjectRepository(NotificationMessage) private msgRepo: Repository<NotificationMessage>,
-    @InjectRepository(NotificationSendLog) private logRepo: Repository<NotificationSendLog>,
+    @InjectRepository(NotificationMessage)
+    private msgRepo: Repository<NotificationMessage>,
+    @InjectRepository(NotificationSendLog)
+    private logRepo: Repository<NotificationSendLog>,
     @Optional() private emailService?: EmailService,
   ) {}
 
   /** 创建通知消息 */
-  async createNotification(dto: CreateNotificationDto): Promise<NotificationMessage> {
+  async createNotification(
+    dto: CreateNotificationDto,
+  ): Promise<NotificationMessage> {
     const entity = this.msgRepo.create(dto);
     const saved = await this.msgRepo.save(entity);
 
@@ -47,7 +51,10 @@ export class NotificationsService {
   }
 
   /** 标记单条已读 */
-  async markRead(id: number, userId: number): Promise<NotificationMessage | null> {
+  async markRead(
+    id: number,
+    userId: number,
+  ): Promise<NotificationMessage | null> {
     const notification = await this.msgRepo.findOneBy({ id });
     if (!notification) return null;
     if (notification.receiverId !== userId) return null;

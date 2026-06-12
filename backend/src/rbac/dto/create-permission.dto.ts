@@ -13,9 +13,11 @@ export class CreatePermissionDto {
   @IsString()
   action!: string;
 
-  @IsOptional() @IsBoolean()
+  @IsOptional()
+  @IsBoolean()
   isActive?: boolean;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   remark?: string | null;
 }

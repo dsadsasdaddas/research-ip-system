@@ -1,0 +1,34 @@
+# =============================================================================
+# Docker 构建上下文忽略清单
+# 作用:加快 docker build 上下文上传,并防止宿主机上平台相关的预编译产物
+#       (尤其是 Windows 下编出的 backend/native/search-engine/index.node 与
+#       target/)混入 Linux 镜像 —— Rust 插件必须在镜像内重新构建。
+# =============================================================================
+
+# --- 通用 ---
+**/.git
+**/.gitignore
+**/.DS_Store
+**/*.log
+**/npm-debug.log*
+**/.env
+**/.env.local
+
+# --- 依赖与产物(镜像内各自 npm ci / vite build / cargo build 重新生成)---
+**/node_modules
+backend/dist
+backend/coverage
+frontend/dist
+
+# --- Rust 原生插件宿主机产物:严禁带入,镜像内必须重建 ---
+backend/native/**/target
+backend/native/**/index.node
+backend/native/**/*.so
+backend/native/**/*.dylib
+backend/native/**/*.dll
+
+# --- 其他 ---
+**/.vscode
+**/.idea
+docs
+*.md

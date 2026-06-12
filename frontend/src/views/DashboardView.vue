@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import * as echarts from 'echarts'
-import http from '../api/http'
+import { statsApi } from '../api/stats'
 
 // ===== 数据 =====
 const loading = ref(true)
@@ -10,7 +10,7 @@ const stats = ref(null)
 async function loadStats() {
   loading.value = true
   try {
-    stats.value = await http.get('/stats')
+    stats.value = await statsApi.get()
     await nextTick()
     initCharts()
   } catch (e) {
@@ -273,5 +273,34 @@ onBeforeUnmount(() => {
 .chart-body {
   height: 220px;
   width: 100%;
+}
+
+/* ===== 响应式:窄屏下统计卡与图表行堆叠为单列 ===== */
+@media (max-width: 992px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+  /* 图表行统一改成纵向堆叠 */
+  .chart-row {
+    flex-direction: column;
+  }
+  .chart-card.wide,
+  .chart-card.narrow,
+  .chart-card.half {
+    flex: none;
+    width: 100%;
+  }
+  .stat-val {
+    font-size: 24px;
+  }
+  .chart-body {
+    height: 240px; /* 窄屏单列时给图表多一点高度,更易读 */
+  }
 }
 </style>

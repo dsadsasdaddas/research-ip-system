@@ -1,5 +1,15 @@
 import {
-  Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, Res, UseGuards,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import * as fs from 'fs';
@@ -38,7 +48,10 @@ export class ReportsController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.SYS_ADMIN)
   @Patch('templates/:id')
-  updateTemplate(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateReportTemplateDto) {
+  updateTemplate(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateReportTemplateDto,
+  ) {
     return this.svc.updateTemplate(id, dto);
   }
 
@@ -64,11 +77,17 @@ export class ReportsController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ) {
-    return this.svc.findAllExportLogs(page ? +page : undefined, pageSize ? +pageSize : undefined);
+    return this.svc.findAllExportLogs(
+      page ? +page : undefined,
+      pageSize ? +pageSize : undefined,
+    );
   }
 
   @Get('exports/:id/download')
-  async downloadExport(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
+  async downloadExport(
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ) {
     const log = await this.svc.findOneExportLog(id);
     if (!log.filePath || log.status !== 'success') {
       res.status(404).json({ message: '导出文件不存在或导出未成功' });
@@ -79,8 +98,21 @@ export class ReportsController {
       return;
     }
     const fileName = log.filePath.split(/[/\\]/).pop() || 'export';
-    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
-    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${encodeURIComponent(fileName)}"`,
+    );
+    // 按扩展名给正确 MIME;csv 带 charset=utf-8,配合文件内的 UTF-8 BOM,Excel 才能正确解码中文
+    const ext = (fileName.split('.').pop() || '').toLowerCase();
+    const mime =
+      ext === 'csv'
+        ? 'text/csv; charset=utf-8'
+        : ext === 'pdf'
+          ? 'application/pdf'
+          : ext === 'xlsx'
+            ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            : 'application/octet-stream';
+    res.setHeader('Content-Type', mime);
     const stream = fs.createReadStream(log.filePath);
     stream.on('error', () => {
       if (!res.headersSent) {

@@ -24,31 +24,78 @@ export class Patent {
   @Column({ type: 'text', nullable: true, comment: '院内发明人' })
   inventors!: string | null;
 
-  @Column({ name: 'outer_inventors', type: 'text', nullable: true, comment: '外单位发明人' })
+  @Column({
+    name: 'outer_inventors',
+    type: 'text',
+    nullable: true,
+    comment: '外单位发明人',
+  })
   outerInventors!: string | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true, comment: '专利权人' })
   patentee!: string | null;
 
-  @Column({ type: 'varchar', name: 'application_no', length: 100, nullable: true, comment: '申请号' })
+  @Column({
+    type: 'varchar',
+    name: 'application_no',
+    length: 100,
+    nullable: true,
+    comment: '申请号',
+  })
   applicationNo!: string | null;
 
-  @Column({ type: 'varchar', name: 'grant_no', length: 100, nullable: true, comment: '授权号' })
+  @Column({
+    type: 'varchar',
+    name: 'grant_no',
+    length: 100,
+    nullable: true,
+    comment: '授权号',
+  })
   grantNo!: string | null;
 
-  @Column({ type: 'varchar', name: 'filing_date', length: 20, nullable: true, comment: '申请日' })
+  @Column({
+    type: 'varchar',
+    name: 'filing_date',
+    length: 20,
+    nullable: true,
+    comment: '申请日',
+  })
   filingDate!: string | null;
 
-  @Column({ type: 'varchar', name: 'grant_date', length: 20, nullable: true, comment: '授权日' })
+  @Column({
+    type: 'varchar',
+    name: 'grant_date',
+    length: 20,
+    nullable: true,
+    comment: '授权日',
+  })
   grantDate!: string | null;
 
-  @Column({ type: 'varchar', name: 'patent_type', length: 50, nullable: true, comment: '专利类型:发明/实用新型/外观设计/PCT' })
+  @Column({
+    type: 'varchar',
+    name: 'patent_type',
+    length: 50,
+    nullable: true,
+    comment: '专利类型:发明/实用新型/外观设计/PCT',
+  })
   patentType!: string | null;
 
-  @Column({ type: 'varchar', length: 50, nullable: true, default: '中国', comment: '国别' })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+    default: '中国',
+    comment: '国别',
+  })
   country!: string | null;
 
-  @Column({ type: 'varchar', name: 'next_fee_date', length: 20, nullable: true, comment: '年费下次缴费日' })
+  @Column({
+    type: 'varchar',
+    name: 'next_fee_date',
+    length: 20,
+    nullable: true,
+    comment: '年费下次缴费日',
+  })
   nextFeeDate!: string | null;
 
   @Column({
@@ -64,55 +111,141 @@ export class Patent {
   @Column({ type: 'varchar', length: 255, nullable: true, comment: '代理机构' })
   agency!: string | null;
 
-  @Column({ type: 'varchar', name: 'legal_status', length: 50, default: '申请中', comment: '法律状态:申请中/授权/失效/驳回' })
+  @Column({
+    type: 'varchar',
+    name: 'legal_status',
+    length: 50,
+    default: '申请中',
+    comment: '法律状态:申请中/授权/失效/驳回',
+  })
   legalStatus!: string | null;
 
   // ========== 扩展字段(§3.1.2)==========
 
-  @Column({ type: 'varchar', name: 'pct_stage', length: 100, nullable: true, comment: 'PCT国际阶段' })
+  @Column({
+    type: 'varchar',
+    name: 'pct_stage',
+    length: 100,
+    nullable: true,
+    comment: 'PCT国际阶段',
+  })
   pctStage!: string | null;
 
-  @Column({ type: 'varchar', name: 'national_stage', length: 100, nullable: true, comment: '国家阶段' })
+  @Column({
+    type: 'varchar',
+    name: 'national_stage',
+    length: 100,
+    nullable: true,
+    comment: '国家阶段',
+  })
   nationalStage!: string | null;
 
-  @Column({ type: 'varchar', name: 'entry_date', length: 20, nullable: true, comment: '国际进入日期' })
+  @Column({
+    type: 'varchar',
+    name: 'entry_date',
+    length: 20,
+    nullable: true,
+    comment: '国际进入日期',
+  })
   entryDate!: string | null;
 
-  @Column({ type: 'varchar', name: 'patent_mark', length: 50, default: '普通专利', comment: '专利标识:普通专利/国防专利/涉密专利' })
+  @Column({
+    type: 'varchar',
+    name: 'patent_mark',
+    length: 50,
+    default: '普通专利',
+    comment: '专利标识:普通专利/国防专利/涉密专利',
+  })
   patentMark!: string | null;
 
-  @Column({ type: 'varchar', name: 'depend_project', length: 255, nullable: true, comment: '课题依托项目' })
+  @Column({
+    type: 'varchar',
+    name: 'depend_project',
+    length: 255,
+    nullable: true,
+    comment: '课题依托项目',
+  })
   dependProject!: string | null;
 
-  @Column({ type: 'varchar', name: 'fund_source', length: 100, nullable: true, comment: '经费来源' })
+  @Column({
+    type: 'varchar',
+    name: 'fund_source',
+    length: 100,
+    nullable: true,
+    comment: '经费来源',
+  })
   fundSource!: string | null;
 
   // ========== 归属与审计(§6.2 + §2 部门数据隔离)==========
 
-  @Column({ type: 'varchar', name: 'secret_level', length: 20, default: '公开', comment: '密级:公开/内部/涉密' })
+  @Column({
+    type: 'varchar',
+    name: 'secret_level',
+    length: 20,
+    default: '公开',
+    comment: '密级:公开/内部/涉密',
+  })
   secretLevel!: string | null;
 
-  @Column({ name: 'dept_id', type: 'int', nullable: true, comment: '所属部门ID(用于部门数据隔离)' })
+  @Column({
+    name: 'dept_id',
+    type: 'int',
+    nullable: true,
+    comment: '所属部门ID(用于部门数据隔离)',
+  })
   deptId!: number | null;
 
-  @Column({ type: 'varchar', name: 'create_user', length: 100, nullable: true, comment: '登记人' })
+  @Column({
+    type: 'varchar',
+    name: 'create_user',
+    length: 100,
+    nullable: true,
+    comment: '登记人',
+  })
   createUser!: string | null;
 
   // ========== 审批与归档 ==========
 
-  @Column({ type: 'varchar', name: 'approval_status', length: 30, default: 'draft', comment: '审批状态' })
+  @Column({
+    type: 'varchar',
+    name: 'approval_status',
+    length: 30,
+    default: 'draft',
+    comment: '审批状态',
+  })
   approvalStatus!: string;
 
-  @Column({ type: 'varchar', name: 'archive_status', length: 30, default: 'normal', comment: '归档状态' })
+  @Column({
+    type: 'varchar',
+    name: 'archive_status',
+    length: 30,
+    default: 'normal',
+    comment: '归档状态',
+  })
   archiveStatus!: string;
 
-  @Column({ type: 'text', name: 'cancel_reason', nullable: true, comment: '注销/作废原因' })
+  @Column({
+    type: 'text',
+    name: 'cancel_reason',
+    nullable: true,
+    comment: '注销/作废原因',
+  })
   cancelReason!: string | null;
 
-  @Column({ name: 'is_deleted', type: 'boolean', default: false, comment: '软删除标记' })
+  @Column({
+    name: 'is_deleted',
+    type: 'boolean',
+    default: false,
+    comment: '软删除标记',
+  })
   isDeleted!: boolean;
 
-  @Column({ name: 'last_status_sync_time', type: 'datetime', nullable: true, comment: '最近一次外部状态同步时间' })
+  @Column({
+    name: 'last_status_sync_time',
+    type: 'datetime',
+    nullable: true,
+    comment: '最近一次外部状态同步时间',
+  })
   lastStatusSyncTime!: Date | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true, comment: '备注' })

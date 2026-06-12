@@ -5,6 +5,7 @@ import { Paper } from '../papers/entities/paper.entity';
 import { Patent } from '../patents/entities/patent.entity';
 import { Copyright } from '../copyrights/entities/copyright.entity';
 import { Transform } from '../transforms/entities/transform.entity';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class StatsService {
@@ -13,15 +14,28 @@ export class StatsService {
     @InjectRepository(Patent) private patentRepo: Repository<Patent>,
     @InjectRepository(Copyright) private copyrightRepo: Repository<Copyright>,
     @InjectRepository(Transform) private transformRepo: Repository<Transform>,
+    private readonly cache: CacheService,
   ) {}
 
   async getAll() {
+    // 看板数据更新频率低,缓存 60s(未启用 Redis 时透传,直接回源)
+    return this.cache.wrap('stats:getAll', 60, () => this.computeAll());
+  }
+
+  private async computeAll() {
     const [papers, patents, copyrights, transforms] = await Promise.all([
       this.paperRepo.find({ select: { publishYear: true, deptId: true } }),
-      this.patentRepo.find({ select: { legalStatus: true, deptId: true, createTime: true } }),
+      this.patentRepo.find({
+        select: { legalStatus: true, deptId: true, createTime: true },
+      }),
       this.copyrightRepo.find({ select: { deptId: true, createTime: true } }),
       this.transformRepo.find({
-        select: { contractAmount: true, receivedAmount: true, finishStatus: true, createTime: true },
+        select: {
+          contractAmount: true,
+          receivedAmount: true,
+          finishStatus: true,
+          createTime: true,
+        },
       }),
     ]);
 
@@ -39,15 +53,21 @@ export class StatsService {
     const trend = {
       years: yearRange,
       papers: this.countByYear(
-        papers.map((p) => p.publishYear?.toString()).filter(Boolean) as string[],
+        papers
+          .map((p) => p.publishYear?.toString())
+          .filter(Boolean) as string[],
         yearRange,
       ),
       patents: this.countByYear(
-        patents.map((p) => p.createTime?.getFullYear().toString()).filter(Boolean) as string[],
+        patents
+          .map((p) => p.createTime?.getFullYear().toString())
+          .filter(Boolean),
         yearRange,
       ),
       copyrights: this.countByYear(
-        copyrights.map((c) => c.createTime?.getFullYear().toString()).filter(Boolean) as string[],
+        copyrights
+          .map((c) => c.createTime?.getFullYear().toString())
+          .filter(Boolean),
         yearRange,
       ),
     };
@@ -61,10 +81,12 @@ export class StatsService {
 
     // ---- 4. 部门排行(柱状图) —— 三张表合并，按 dept_id group ----
     const deptMap: Record<string, number> = {};
-    [...papers, ...patents, ...copyrights].forEach((r: { deptId: number | null }) => {
-      const k = r.deptId ? `部门${r.deptId}` : '未分配';
-      deptMap[k] = (deptMap[k] || 0) + 1;
-    });
+    [...papers, ...patents, ...copyrights].forEach(
+      (r: { deptId: number | null }) => {
+        const k = r.deptId ? `部门${r.deptId}` : '未分配';
+        deptMap[k] = (deptMap[k] || 0) + 1;
+      },
+    );
     const deptRank = Object.entries(deptMap)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8)
@@ -76,12 +98,21 @@ export class StatsService {
       const k = p.legalStatus || '未知';
       statusMap[k] = (statusMap[k] || 0) + 1;
     });
-    const patentStatus = Object.entries(statusMap).map(([status, count]) => ({ status, count }));
+    const patentStatus = Object.entries(statusMap).map(([status, count]) => ({
+      status,
+      count,
+    }));
 
     // ---- 6. 转化合同金额 vs 到账金额(柱状图) ----
     const transformAmounts = {
-      contract: transforms.reduce((s, t) => s + Number(t.contractAmount || 0), 0),
-      received: transforms.reduce((s, t) => s + Number(t.receivedAmount || 0), 0),
+      contract: transforms.reduce(
+        (s, t) => s + Number(t.contractAmount || 0),
+        0,
+      ),
+      received: transforms.reduce(
+        (s, t) => s + Number(t.receivedAmount || 0),
+        0,
+      ),
     };
 
     // ---- 7. 转化漏斗 ----
@@ -97,7 +128,15 @@ export class StatsService {
       count: funnelMap[stage] || 0,
     }));
 
-    return { totals, trend, typeDist, deptRank, patentStatus, transformAmounts, funnel };
+    return {
+      totals,
+      trend,
+      typeDist,
+      deptRank,
+      patentStatus,
+      transformAmounts,
+      funnel,
+    };
   }
 
   // 最近6年

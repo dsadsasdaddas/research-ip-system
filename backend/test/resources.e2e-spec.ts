@@ -35,14 +35,22 @@ describe('Resources (e2e) — 业务接口读写 + 校验', () => {
       id = res.body.id;
     });
 
-    it('GET 列表 → 200 且为数组/分页结构', async () => {
-      const res = await request(app.getHttpServer()).get('/api/papers').set(H());
+    it('GET 列表 → 200 且为分页结构 {items,total,page,pageSize}', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/papers')
+        .set(H());
       expect(res.status).toBe(200);
-      expect(res.body).toBeDefined();
+      expect(res.body.items).toBeInstanceOf(Array);
+      expect(typeof res.body.total).toBe('number');
+      expect(res.body.page).toBe(1);
+      expect(res.body.pageSize).toBe(20);
+      expect(res.body.items.length).toBeLessThanOrEqual(20);
     });
 
     it('GET 单条 → 200 且标题正确', async () => {
-      const res = await request(app.getHttpServer()).get(`/api/papers/${id}`).set(H());
+      const res = await request(app.getHttpServer())
+        .get(`/api/papers/${id}`)
+        .set(H());
       expect(res.status).toBe(200);
       expect(res.body.title).toBe('E2E 测试论文');
     });
@@ -57,12 +65,16 @@ describe('Resources (e2e) — 业务接口读写 + 校验', () => {
     });
 
     it('DELETE 删除 → 200', async () => {
-      const res = await request(app.getHttpServer()).delete(`/api/papers/${id}`).set(H());
+      const res = await request(app.getHttpServer())
+        .delete(`/api/papers/${id}`)
+        .set(H());
       expect(res.status).toBe(200);
     });
 
     it('删除后再查 → 404', async () => {
-      const res = await request(app.getHttpServer()).get(`/api/papers/${id}`).set(H());
+      const res = await request(app.getHttpServer())
+        .get(`/api/papers/${id}`)
+        .set(H());
       expect(res.status).toBe(404);
     });
   });
@@ -78,7 +90,9 @@ describe('Resources (e2e) — 业务接口读写 + 校验', () => {
     });
 
     it(':id 非数字 → 400(ParseIntPipe)', async () => {
-      const res = await request(app.getHttpServer()).get('/api/papers/abc').set(H());
+      const res = await request(app.getHttpServer())
+        .get('/api/papers/abc')
+        .set(H());
       expect(res.status).toBe(400);
     });
 
@@ -98,7 +112,9 @@ describe('Resources (e2e) — 业务接口读写 + 校验', () => {
       expect(res.status).toBe(201);
       expect(res.body).not.toHaveProperty('hacker_field');
       // 清理
-      await request(app.getHttpServer()).delete(`/api/papers/${res.body.id}`).set(H());
+      await request(app.getHttpServer())
+        .delete(`/api/papers/${res.body.id}`)
+        .set(H());
     });
   });
 
@@ -106,28 +122,37 @@ describe('Resources (e2e) — 业务接口读写 + 校验', () => {
   describe('Patents / Copyrights / Transforms 创建并清理', () => {
     it('Patents POST→DELETE', async () => {
       const c = await request(app.getHttpServer())
-        .post('/api/patents').set(H()).send({ name: 'E2E 专利' });
+        .post('/api/patents')
+        .set(H())
+        .send({ name: 'E2E 专利' });
       expect(c.status).toBe(201);
       const d = await request(app.getHttpServer())
-        .delete(`/api/patents/${c.body.id}`).set(H());
+        .delete(`/api/patents/${c.body.id}`)
+        .set(H());
       expect(d.status).toBe(200);
     });
 
     it('Copyrights POST→DELETE', async () => {
       const c = await request(app.getHttpServer())
-        .post('/api/copyrights').set(H()).send({ name: 'E2E 软著' });
+        .post('/api/copyrights')
+        .set(H())
+        .send({ name: 'E2E 软著' });
       expect(c.status).toBe(201);
       const d = await request(app.getHttpServer())
-        .delete(`/api/copyrights/${c.body.id}`).set(H());
+        .delete(`/api/copyrights/${c.body.id}`)
+        .set(H());
       expect(d.status).toBe(200);
     });
 
     it('Transforms POST→DELETE', async () => {
       const c = await request(app.getHttpServer())
-        .post('/api/transforms').set(H()).send({ partner: 'E2E 受让方', contractAmount: 100000 });
+        .post('/api/transforms')
+        .set(H())
+        .send({ partner: 'E2E 受让方', contractAmount: 100000 });
       expect(c.status).toBe(201);
       const d = await request(app.getHttpServer())
-        .delete(`/api/transforms/${c.body.id}`).set(H());
+        .delete(`/api/transforms/${c.body.id}`)
+        .set(H());
       expect(d.status).toBe(200);
     });
   });
@@ -136,7 +161,7 @@ describe('Resources (e2e) — 业务接口读写 + 校验', () => {
   describe('只读接口 → 200', () => {
     it.each([
       '/api/stats',
-      '/api/search?keyword=test',
+      '/api/search?q=test',
       '/api/fees',
       '/api/fees/alert-summary',
       '/api/reminders/tasks',
@@ -147,6 +172,69 @@ describe('Resources (e2e) — 业务接口读写 + 校验', () => {
     ])('GET %s', async (path) => {
       const res = await request(app.getHttpServer()).get(path).set(H());
       expect(res.status).toBe(200);
+    });
+  });
+
+  // ---------- 分页(论文/专利/软著/转化 列表统一为 {items,total,page,pageSize,totalPages}) ----------
+  describe('分页结构', () => {
+    const createdIds: number[] = [];
+
+    afterAll(async () => {
+      for (const id of createdIds) {
+        await request(app.getHttpServer()).delete(`/api/papers/${id}`).set(H());
+      }
+    });
+
+    it('patents / copyrights / transforms 列表均为分页结构', async () => {
+      for (const path of [
+        '/api/patents',
+        '/api/copyrights',
+        '/api/transforms',
+      ]) {
+        const res = await request(app.getHttpServer()).get(path).set(H());
+        expect(res.status).toBe(200);
+        expect(res.body.items).toBeInstanceOf(Array);
+        expect(typeof res.body.total).toBe('number');
+        expect(res.body.page).toBe(1);
+        expect(res.body.pageSize).toBe(20);
+      }
+    });
+
+    it('pageSize=1 时第1、2页各1条,total/totalPages 正确', async () => {
+      // 先造 3 条可见数据(密级=公开,管理员可见)
+      for (let i = 0; i < 3; i++) {
+        const r = await request(app.getHttpServer())
+          .post('/api/papers')
+          .set(H())
+          .send({ title: `分页测试论文${i}`, secretLevel: '公开' });
+        expect(r.status).toBe(201);
+        createdIds.push(r.body.id);
+      }
+      const p1 = await request(app.getHttpServer())
+        .get('/api/papers')
+        .set(H())
+        .query({ pageSize: 1, page: 1 });
+      const p2 = await request(app.getHttpServer())
+        .get('/api/papers')
+        .set(H())
+        .query({ pageSize: 1, page: 2 });
+      expect(p1.body.pageSize).toBe(1);
+      expect(p1.body.page).toBe(1);
+      expect(p1.body.items).toHaveLength(1);
+      expect(p2.body.page).toBe(2);
+      expect(p2.body.items).toHaveLength(1);
+      expect(p1.body.total).toBeGreaterThanOrEqual(3);
+      expect(p1.body.totalPages).toBe(p1.body.total); // pageSize=1 时 totalPages === total
+    });
+
+    it('keyword 过滤联动 total', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/papers')
+        .set(H())
+        .query({ keyword: '分页测试论文' });
+      expect(res.status).toBe(200);
+      expect(res.body.items.length).toBeGreaterThanOrEqual(3);
+      expect(res.body.total).toBeGreaterThanOrEqual(3);
     });
   });
 });

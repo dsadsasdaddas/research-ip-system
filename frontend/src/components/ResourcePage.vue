@@ -1,9 +1,10 @@
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search as SearchIcon, Download } from '@element-plus/icons-vue'
 import SchemaForm from './SchemaForm.vue'
 import http from '../api/http'
+import { useResourceListStore } from '../stores/useResourceListStore'
 
 /**
  * 通用「成果管理页」:搜索 + 列表表格 + 新增/编辑弹窗 + 删除。
@@ -23,22 +24,64 @@ const props = defineProps({
   blankForm: { type: Function, required: true },
   api: { type: Object, required: true },
   resourcePath: { type: String, default: '' },
+  // 列表状态(分页/关键字)持久化的键,默认取 resourcePath
+  storeKey: { type: String, default: '' },
 })
 
-// ===== 列表 & 搜索 =====
+// ===== 列表状态持久化:从 store 恢复分页与关键字 =====
+const resourceListStore = useResourceListStore()
+const listKey = props.storeKey || props.resourcePath || ''
+const saved = listKey ? resourceListStore.get(listKey) : null
+
+// ===== 列表 & 搜索 & 分页 =====
 const rows = ref([])
-const keyword = ref('')
+const keyword = ref(saved?.keyword ?? '')
 const loading = ref(false)
+const page = ref(saved?.page ?? 1)
+const pageSize = ref(saved?.pageSize ?? 20)
+const total = ref(0)
+
+// 关键字/分页变化时回写 store,离开再回来即可恢复
+watch(
+  [keyword, page, pageSize],
+  () => {
+    if (listKey) {
+      resourceListStore.set(listKey, {
+        keyword: keyword.value,
+        page: page.value,
+        pageSize: pageSize.value,
+      })
+    }
+  },
+  { deep: true },
+)
 
 async function loadList() {
   loading.value = true
   try {
-    rows.value = await props.api.list(keyword.value)
+    const res = await props.api.list({ keyword: keyword.value, page: page.value, pageSize: pageSize.value })
+    rows.value = res.items ?? []
+    total.value = res.total ?? 0
   } catch (e) {
     ElMessage.error('加载列表失败:' + e.message)
   } finally {
     loading.value = false
   }
+}
+
+// 搜索/切换每页条数时回到第一页(结果集或页码范围变了)
+function onSearch() {
+  page.value = 1
+  loadList()
+}
+function onPageChange(p) {
+  page.value = p
+  loadList()
+}
+function onSizeChange(s) {
+  pageSize.value = s
+  page.value = 1
+  loadList()
 }
 
 // ===== 弹窗表单 =====
@@ -112,8 +155,29 @@ async function handleExport(format) {
   }
   exportLoading.value = true
   try {
-    await http.post(`/${props.resourcePath}/export`, { format, keyword: keyword.value })
-    ElMessage.success('导出任务已提交')
+    // 把表格列配置(prop/label)作为导出列传给后端 → 导出文件带中文表头
+    const body = {
+      format,
+      keyword: keyword.value,
+      columns: props.columns.map((c) => ({ key: c.prop, header: c.label })),
+    }
+    // responseType:blob 才能拿到二进制文件;响应拦截器已是 res=>res.data,故这里直接得到 Blob
+    const blob = await http.post(`/${props.resourcePath}/export`, body, { responseType: 'blob' })
+    // 极少数情况后端用 200 返回 JSON 错误体(也被包成 blob),按类型识别后展示真实错误
+    if (blob.type && blob.type.includes('application/json')) {
+      const err = JSON.parse(await blob.text())
+      ElMessage.error('导出失败：' + (err.message || ''))
+      return
+    }
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${props.entityName}_${format.toUpperCase()}.${format}`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
   } catch (e) {
     ElMessage.error('导出失败：' + (e.message || ''))
   } finally {
@@ -134,10 +198,10 @@ onMounted(loadList)
         clearable
         :prefix-icon="SearchIcon"
         style="width: 260px"
-        @keyup.enter="loadList"
-        @clear="loadList"
+        @keyup.enter="onSearch"
+        @clear="onSearch"
       />
-      <el-button @click="loadList">搜索</el-button>
+      <el-button @click="onSearch">搜索</el-button>
       <div class="spacer" />
       <el-dropdown v-if="resourcePath" trigger="click" @command="handleExport" style="margin-right: 8px">
         <el-button :loading="exportLoading">
@@ -185,10 +249,22 @@ onMounted(loadList)
         </el-table-column>
         <template #empty>暂无数据,点右上角「{{ newButtonText }}」登记第一条</template>
       </el-table>
+      <div class="pager">
+        <el-pagination
+          background
+          :total="total"
+          :current-page="page"
+          :page-size="pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next"
+          @current-change="onPageChange"
+          @size-change="onSizeChange"
+        />
+      </div>
     </div>
 
     <!-- 新增 / 编辑 弹窗 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="760px" top="6vh">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="760px" top="6vh" class="res-dialog">
       <SchemaForm ref="formRef" :model="form" :sections="formSections" />
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -216,6 +292,11 @@ onMounted(loadList)
 .table-card {
   padding: 4px 4px 8px;
 }
+.pager {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 12px;
+}
 .res-table {
   width: 100%;
 }
@@ -223,5 +304,34 @@ onMounted(loadList)
   background: var(--bg-muted);
   color: var(--text-regular);
   font-weight: 600;
+}
+
+/* ===== 响应式:窄屏下工具条换行、表格容器不撑破视口、弹窗自适应宽度 ===== */
+@media (max-width: 768px) {
+  .toolbar {
+    flex-wrap: wrap;
+    padding: 10px 12px;
+  }
+  .toolbar .spacer {
+    /* 让换行后搜索框独占一行更紧凑 */
+    flex-basis: 100%;
+    height: 0;
+    padding: 0;
+  }
+  .table-card {
+    padding: 0;
+  }
+  .pager {
+    justify-content: center;
+    padding: 8px 4px;
+  }
+}
+
+/* 弹窗在窄屏按视口宽度自适应(覆盖 760px 固定宽) */
+@media (max-width: 800px) {
+  .res-dialog :deep(.el-dialog) {
+    width: 94vw !important;
+    margin: 0 auto !important;
+  }
 }
 </style>

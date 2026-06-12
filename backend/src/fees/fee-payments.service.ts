@@ -19,7 +19,10 @@ export class FeePaymentsService {
    * 创建缴费记录。
    * 如果缴费金额覆盖了费用金额，自动将 fee 的 payStatus 更新为 paid。
    */
-  async create(feeId: number, dto: CreateFeePaymentDto): Promise<FeePaymentRecord> {
+  async create(
+    feeId: number,
+    dto: CreateFeePaymentDto,
+  ): Promise<FeePaymentRecord> {
     const entity = this.repo.create({ ...dto, feeId });
     const saved = await this.repo.save(entity);
 

@@ -3,6 +3,8 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { AuditLogInterceptor } from './../src/audit-logs/audit-log.interceptor';
+import { AllExceptionsFilter } from './../src/common/filters/all-exceptions.filter';
+import { RequestContextInterceptor } from './../src/common/utils/request-context';
 import { UsersService } from './../src/users/users.service';
 
 /**
@@ -21,7 +23,11 @@ export async function createTestApp(): Promise<INestApplication> {
   const app = moduleRef.createNestApplication();
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-  app.useGlobalInterceptors(app.get(AuditLogInterceptor));
+  app.useGlobalInterceptors(
+    new RequestContextInterceptor(),
+    app.get(AuditLogInterceptor),
+  );
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   await app.init();
 
@@ -32,14 +38,14 @@ export async function createTestApp(): Promise<INestApplication> {
 
 /** 测试账号清单(与 seedAdmin 一致),密码:admin 用 Admin@123,其余 Test@123。 */
 export const ACCOUNTS = {
-  admin:    { username: 'admin',    password: 'Admin@123', role: 'sys_admin' },
-  leader:   { username: 'leader',   password: 'Test@123',  role: 'leader' },
-  auditor:  { username: 'auditor',  password: 'Test@123',  role: 'auditor' },
-  secret:   { username: 'secret',   password: 'Test@123',  role: 'secret_admin' },
-  csAdmin:  { username: 'cs_admin', password: 'Test@123',  role: 'dept_admin' },
-  csSec:    { username: 'cs_sec',   password: 'Test@123',  role: 'dept_secretary' },
-  csUser:   { username: 'cs_user',  password: 'Test@123',  role: 'researcher' },
-  eeUser:   { username: 'ee_user',  password: 'Test@123',  role: 'researcher' },
+  admin: { username: 'admin', password: 'Admin@123', role: 'sys_admin' },
+  leader: { username: 'leader', password: 'Test@123', role: 'leader' },
+  auditor: { username: 'auditor', password: 'Test@123', role: 'auditor' },
+  secret: { username: 'secret', password: 'Test@123', role: 'secret_admin' },
+  csAdmin: { username: 'cs_admin', password: 'Test@123', role: 'dept_admin' },
+  csSec: { username: 'cs_sec', password: 'Test@123', role: 'dept_secretary' },
+  csUser: { username: 'cs_user', password: 'Test@123', role: 'researcher' },
+  eeUser: { username: 'ee_user', password: 'Test@123', role: 'researcher' },
 } as const;
 
 /** 用账号登录,返回 JWT。失败会抛出,便于测试早发现。 */
@@ -52,7 +58,9 @@ export async function login(
     .post('/api/auth/login')
     .send({ username, password });
   if (res.status !== 201 || !res.body.token) {
-    throw new Error(`login failed for ${username}: ${res.status} ${JSON.stringify(res.body)}`);
+    throw new Error(
+      `login failed for ${username}: ${res.status} ${JSON.stringify(res.body)}`,
+    );
   }
   return res.body.token as string;
 }

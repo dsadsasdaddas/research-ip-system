@@ -13,16 +13,19 @@ export class AuditLogsController {
 
   @Get()
   findAll(
-    @Query('keyword')  keyword?: string,
-    @Query('module')   module?: string,
-    @Query('action')   action?: string,
+    @Query('keyword') keyword?: string,
+    @Query('module') module?: string,
+    @Query('action') action?: string,
     @Query('username') username?: string,
-    @Query('page')     page?: string,
+    @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ) {
     return this.svc.findAll({
-      keyword, module, action, username,
-      page:     page     ? +page     : 1,
+      keyword,
+      module,
+      action,
+      username,
+      page: page ? +page : 1,
       pageSize: pageSize ? +pageSize : 50,
     });
   }

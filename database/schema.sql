@@ -553,10 +553,18 @@ CREATE TABLE IF NOT EXISTS audit_log (
   body TEXT NULL COMMENT '请求体脱敏',
   status_code INT NULL COMMENT '响应状态码',
   ip VARCHAR(50) NULL COMMENT '客户端IP',
+  operate_type VARCHAR(20) NULL COMMENT '字段级操作类型:create/update/delete',
+  table_name VARCHAR(50) NULL COMMENT '变更的表名',
+  record_id INT NULL COMMENT '变更的记录主键',
+  old_value JSON NULL COMMENT '变更前的行(update/delete)',
+  new_value JSON NULL COMMENT '变更后的行(update)',
+  ip_address VARCHAR(50) NULL COMMENT '字段级日志来源IP(尽力而为)',
+  operate_time DATETIME NULL COMMENT '字段级变更发生时间',
   create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   KEY idx_audit_user (user_id),
   KEY idx_audit_module_action (module, action),
-  KEY idx_audit_time (create_time)
+  KEY idx_audit_time (create_time),
+  KEY idx_audit_field (table_name, record_id, operate_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作审计日志';
 
 CREATE TABLE IF NOT EXISTS search_log (

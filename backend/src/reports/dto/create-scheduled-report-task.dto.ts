@@ -2,7 +2,8 @@ import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateScheduledReportTaskDto {
-  @Type(() => Number) @IsNumber()
+  @Type(() => Number)
+  @IsNumber()
   templateId!: number;
 
   @IsString()
@@ -11,12 +12,15 @@ export class CreateScheduledReportTaskDto {
   @IsString()
   cronExpr!: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   receivers?: string | null;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   channel?: string;
 
-  @IsOptional() @IsBoolean()
+  @IsOptional()
+  @IsBoolean()
   isActive?: boolean;
 }

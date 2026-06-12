@@ -25,7 +25,10 @@ export class FeePlansService {
   }
 
   findByYear(year: number): Promise<FeePlan[]> {
-    return this.repo.find({ where: { planYear: year }, order: { dueDate: 'ASC' } });
+    return this.repo.find({
+      where: { planYear: year },
+      order: { dueDate: 'ASC' },
+    });
   }
 
   async update(id: number, dto: Partial<CreateFeePlanDto>): Promise<FeePlan> {

@@ -25,13 +25,16 @@ export class EmailService {
 
     if (this.enabled) {
       this.transporter = nodemailer.createTransport({
-        host, port,
+        host,
+        port,
         secure: port === 465,
         auth: { user, pass },
       });
       this.logger.log(`Email service enabled: ${user} → ${host}:${port}`);
     } else {
-      this.logger.warn('SMTP 未配置（SMTP_HOST/SMTP_USER/SMTP_PASS），邮件通知已禁用');
+      this.logger.warn(
+        'SMTP 未配置（SMTP_HOST/SMTP_USER/SMTP_PASS），邮件通知已禁用',
+      );
     }
   }
 
@@ -63,7 +66,8 @@ export class EmailService {
     alertLevel: number;
     amount?: number;
   }) {
-    const levelText = ['', '30天', '15天', '7天', '已逾期'][opts.alertLevel] || '';
+    const levelText =
+      ['', '30天', '15天', '7天', '已逾期'][opts.alertLevel] || '';
     const subject = `【科研成果系统】知识产权年费${levelText}预警 - ${opts.feeName}`;
     const html = `
       <h3>知识产权费用预警通知</h3>

@@ -8,7 +8,14 @@ import { IntegrationsController } from './integrations.controller';
 import { IntegrationsService } from './integrations.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([IntegrationConfig, IntegrationLog, IntegrationMapping, IntegrationAlert])],
+  imports: [
+    TypeOrmModule.forFeature([
+      IntegrationConfig,
+      IntegrationLog,
+      IntegrationMapping,
+      IntegrationAlert,
+    ]),
+  ],
   controllers: [IntegrationsController],
   providers: [IntegrationsService],
   exports: [IntegrationsService],

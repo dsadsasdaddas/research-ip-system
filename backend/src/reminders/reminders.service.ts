@@ -33,25 +33,38 @@ export class RemindersService {
   // ===== 提醒任务 =====
 
   async listTasks(query: ReminderTaskListQuery): Promise<ReminderTask[]> {
-    const qb = this.taskRepo.createQueryBuilder('t').orderBy('t.remind_date', 'ASC');
-    if (query.keyword)     qb.andWhere('t.title LIKE :kw', { kw: `%${query.keyword}%` });
-    if (query.remindLevel) qb.andWhere('t.remind_level = :lvl', { lvl: query.remindLevel });
+    const qb = this.taskRepo
+      .createQueryBuilder('t')
+      .orderBy('t.remind_date', 'ASC');
+    if (query.keyword)
+      qb.andWhere('t.title LIKE :kw', { kw: `%${query.keyword}%` });
+    if (query.remindLevel)
+      qb.andWhere('t.remind_level = :lvl', { lvl: query.remindLevel });
     if (query.isConfirm !== undefined && query.isConfirm !== '') {
       qb.andWhere('t.is_confirm = :ic', { ic: query.isConfirm === 'true' });
     }
-    if (query.deptId != null) qb.andWhere('t.dept_id = :did', { did: query.deptId });
+    if (query.deptId != null)
+      qb.andWhere('t.dept_id = :did', { did: query.deptId });
     return qb.getMany();
   }
 
-  async createTask(dto: CreateReminderTaskDto, user: AuthUser): Promise<ReminderTask> {
-    return this.taskRepo.save(this.taskRepo.create({
-      ...dto,
-      receiverName: dto.receiverName ?? user.username,
-      deptId: dto.deptId ?? user.deptId ?? null,
-    }));
+  async createTask(
+    dto: CreateReminderTaskDto,
+    user: AuthUser,
+  ): Promise<ReminderTask> {
+    return this.taskRepo.save(
+      this.taskRepo.create({
+        ...dto,
+        receiverName: dto.receiverName ?? user.username,
+        deptId: dto.deptId ?? user.deptId ?? null,
+      }),
+    );
   }
 
-  async updateTask(id: number, dto: Partial<CreateReminderTaskDto>): Promise<ReminderTask | null> {
+  async updateTask(
+    id: number,
+    dto: Partial<CreateReminderTaskDto>,
+  ): Promise<ReminderTask | null> {
     await this.taskRepo.update(id, dto);
     return this.taskRepo.findOneBy({ id });
   }
@@ -62,14 +75,19 @@ export class RemindersService {
   }
 
   async confirmTask(id: number): Promise<ReminderTask | null> {
-    await this.taskRepo.update(id, { isConfirm: true, confirmTime: new Date() });
+    await this.taskRepo.update(id, {
+      isConfirm: true,
+      confirmTime: new Date(),
+    });
     return this.taskRepo.findOneBy({ id });
   }
 
   async checkSecondRemind(): Promise<{ secondReminded: number }> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const tasks = await this.taskRepo.find({ where: { isConfirm: false, secondRemindSent: false } });
+    const tasks = await this.taskRepo.find({
+      where: { isConfirm: false, secondRemindSent: false },
+    });
     const toUpdate: number[] = [];
     for (const t of tasks) {
       if (!t.deadline) continue;
@@ -94,8 +112,12 @@ export class RemindersService {
     if (deptId != null) qb.andWhere('t.dept_id = :did', { did: deptId });
     const all = await qb.getMany();
 
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    let pending = 0, overdue = 0, urgent = 0, secondRemind = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let pending = 0,
+      overdue = 0,
+      urgent = 0,
+      secondRemind = 0;
     for (const t of all) {
       if (!t.isConfirm) {
         pending++;
@@ -117,7 +139,10 @@ export class RemindersService {
     return this.ruleRepo.save(this.ruleRepo.create(dto));
   }
 
-  async updateRule(id: number, dto: Partial<CreateReminderRuleDto>): Promise<ReminderRule | null> {
+  async updateRule(
+    id: number,
+    dto: Partial<CreateReminderRuleDto>,
+  ): Promise<ReminderRule | null> {
     await this.ruleRepo.update(id, dto);
     return this.ruleRepo.findOneBy({ id });
   }
