@@ -10,12 +10,17 @@ import type { AuthUser } from '../auth/types/auth-user.interface';
 @Injectable()
 export class SecretAccessService {
   constructor(
-    @InjectRepository(SecretAccessGrant) private grantRepo: Repository<SecretAccessGrant>,
-    @InjectRepository(SecretAccessLog) private logRepo: Repository<SecretAccessLog>,
+    @InjectRepository(SecretAccessGrant)
+    private grantRepo: Repository<SecretAccessGrant>,
+    @InjectRepository(SecretAccessLog)
+    private logRepo: Repository<SecretAccessLog>,
   ) {}
 
   /** 创建涉密访问授权 */
-  async grantAccess(dto: CreateSecretAccessGrantDto, grantedBy: AuthUser): Promise<SecretAccessGrant> {
+  async grantAccess(
+    dto: CreateSecretAccessGrantDto,
+    grantedBy: AuthUser,
+  ): Promise<SecretAccessGrant> {
     const entity = this.grantRepo.create({
       ...dto,
       startTime: dto.startTime ? new Date(dto.startTime) : null,
@@ -35,15 +40,24 @@ export class SecretAccessService {
   }
 
   /** 查询授权列表 */
-  async findGrants(businessType?: string, businessId?: number): Promise<SecretAccessGrant[]> {
+  async findGrants(
+    businessType?: string,
+    businessId?: number,
+  ): Promise<SecretAccessGrant[]> {
     const where: Record<string, unknown> = {};
     if (businessType) where.businessType = businessType;
-    if (businessId !== undefined && !Number.isNaN(businessId)) where.businessId = businessId;
+    if (businessId !== undefined && !Number.isNaN(businessId))
+      where.businessId = businessId;
     return this.grantRepo.find({ where, order: { createTime: 'DESC' } });
   }
 
   /** 检查用户是否有权限访问 */
-  async checkAccess(businessType: string, businessId: number, userId: number, action: string): Promise<boolean> {
+  async checkAccess(
+    businessType: string,
+    businessId: number,
+    userId: number,
+    action: string,
+  ): Promise<boolean> {
     const now = new Date();
     const grants = await this.grantRepo.find({
       where: {
@@ -60,8 +74,16 @@ export class SecretAccessService {
       if (g.endTime && new Date(g.endTime) < now) return false;
       // 检查权限范围
       if (g.grantScope === 'manage') return true;
-      if (g.grantScope === 'download' && (action === 'download' || action === 'view' || action === 'preview')) return true;
-      if (g.grantScope === 'read' && (action === 'view' || action === 'preview')) return true;
+      if (
+        g.grantScope === 'download' &&
+        (action === 'download' || action === 'view' || action === 'preview')
+      )
+        return true;
+      if (
+        g.grantScope === 'read' &&
+        (action === 'view' || action === 'preview')
+      )
+        return true;
       return false;
     });
   }

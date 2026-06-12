@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Attachment } from './entities/attachment.entity';
@@ -14,8 +19,10 @@ import { paginate } from '../common/utils/pagination';
 export class AttachmentsService {
   constructor(
     @InjectRepository(Attachment) private repo: Repository<Attachment>,
-    @InjectRepository(AttachmentVersion) private versionRepo: Repository<AttachmentVersion>,
-    @InjectRepository(AttachmentAccessLog) private accessLogRepo: Repository<AttachmentAccessLog>,
+    @InjectRepository(AttachmentVersion)
+    private versionRepo: Repository<AttachmentVersion>,
+    @InjectRepository(AttachmentAccessLog)
+    private accessLogRepo: Repository<AttachmentAccessLog>,
     private dataSource: DataSource,
   ) {}
 
@@ -36,9 +43,14 @@ export class AttachmentsService {
     // 计算版本号：同成果同文件名的历史版本
     const lastVer = await this.repo
       .createQueryBuilder('a')
-      .where('a.relation_type = :rt AND a.relation_id = :rid AND a.original_name = :on', {
-        rt: relationType, rid: relationId, on: file.originalname,
-      })
+      .where(
+        'a.relation_type = :rt AND a.relation_id = :rid AND a.original_name = :on',
+        {
+          rt: relationType,
+          rid: relationId,
+          on: file.originalname,
+        },
+      )
       .orderBy('a.version', 'DESC')
       .getOne();
 
@@ -47,24 +59,29 @@ export class AttachmentsService {
     const att = this.repo.create({
       relationType,
       relationId,
-      fileName:     file.filename,
+      fileName: file.filename,
       originalName: file.originalname,
-      fileSize:     file.size,
-      mimeType:     file.mimetype,
-      filePath:     file.path,
+      fileSize: file.size,
+      mimeType: file.mimetype,
+      filePath: file.path,
       version,
-      uploadUser:   user.username,
+      uploadUser: user.username,
       remark,
     });
     return this.repo.save(att);
   }
 
-  async list(relationType: string | undefined, relationId: number | undefined, user: AuthUser): Promise<Attachment[]> {
+  async list(
+    relationType: string | undefined,
+    relationId: number | undefined,
+    user: AuthUser,
+  ): Promise<Attachment[]> {
     // 仅把"有值"的条件放进 where:不传过滤参数时返回全部,
     // 否则把 undefined/NaN 塞进 where 会让新版 TypeORM 直接报错(500)。
     const where: { relationType?: string; relationId?: number } = {};
     if (relationType) where.relationType = relationType;
-    if (relationId !== undefined && !Number.isNaN(relationId)) where.relationId = relationId;
+    if (relationId !== undefined && !Number.isNaN(relationId))
+      where.relationId = relationId;
     const rows = await this.repo.find({
       where,
       order: { createTime: 'DESC' },
@@ -101,14 +118,21 @@ export class AttachmentsService {
       if (!att.relationId || !att.relationType) {
         return att.uploadUser === user.username;
       }
-      const relatedDeptId = await this.getRelatedDeptId(att.relationType, att.relationId);
+      const relatedDeptId = await this.getRelatedDeptId(
+        att.relationType,
+        att.relationId,
+      );
       if (relatedDeptId == null) return false;
       if (relatedDeptId !== deptId) return false;
     }
     return true;
   }
 
-  private async checkRelationAccess(relationType: string, relationId: number, user: AuthUser): Promise<void> {
+  private async checkRelationAccess(
+    relationType: string,
+    relationId: number,
+    user: AuthUser,
+  ): Promise<void> {
     if (!relationType || Number.isNaN(relationId)) {
       throw new BadRequestException('附件关联对象不能为空');
     }
@@ -121,10 +145,16 @@ export class AttachmentsService {
   }
 
   /** 根据关联类型和 ID 查询对应成果的 deptId */
-  private async getRelatedDeptId(relationType: string, relationId: number): Promise<number | null> {
+  private async getRelatedDeptId(
+    relationType: string,
+    relationId: number,
+  ): Promise<number | null> {
     const tableMap: Record<string, string> = {
-      paper: 'paper', patent: 'patent', copyright: 'copyright',
-      transform: 'transform', fee: 'fee',
+      paper: 'paper',
+      patent: 'patent',
+      copyright: 'copyright',
+      transform: 'transform',
+      fee: 'fee',
     };
     const table = tableMap[relationType];
     if (!table) return null;

@@ -12,14 +12,27 @@ export class AuthService {
 
   async login(username: string, password: string) {
     const user = await this.usersService.findByUsername(username);
-    if (!user || !user.isActive) throw new UnauthorizedException('用户名或密码错误');
+    if (!user || !user.isActive)
+      throw new UnauthorizedException('用户名或密码错误');
     const match = await bcrypt.compare(password, user.password);
     if (!match) throw new UnauthorizedException('用户名或密码错误');
 
-    const payload = { sub: user.id, username: user.username, realName: user.realName, role: user.role, deptId: user.deptId };
+    const payload = {
+      sub: user.id,
+      username: user.username,
+      realName: user.realName,
+      role: user.role,
+      deptId: user.deptId,
+    };
     return {
       token: this.jwtService.sign(payload),
-      user: { id: user.id, username: user.username, realName: user.realName, role: user.role, deptId: user.deptId },
+      user: {
+        id: user.id,
+        username: user.username,
+        realName: user.realName,
+        role: user.role,
+        deptId: user.deptId,
+      },
     };
   }
 }

@@ -17,6 +17,31 @@ const activeMenu = computed(() => route.path)
 const pageTitle  = computed(() => route.meta.title || '')
 const isSysAdmin = computed(() => auth.user?.role === 'sys_admin')
 
+// ===== 移动端:抽屉式侧栏(<768px 隐藏常驻侧栏,用汉堡按钮触发抽屉)=====
+const isMobile = ref(false)
+const drawerVisible = ref(false)
+
+function checkMobile() {
+  isMobile.value = window.innerWidth < 768
+  // 进入桌面态时收起抽屉
+  if (!isMobile.value) drawerVisible.value = false
+}
+
+function onHamburger() {
+  drawerVisible.value = true
+}
+
+let resizeTimer = null
+function onWindowResize() {
+  clearTimeout(resizeTimer)
+  resizeTimer = setTimeout(checkMobile, 120)
+}
+
+// 抽屉里点击菜单项后自动关闭
+function onMenuSelect() {
+  if (isMobile.value) drawerVisible.value = false
+}
+
 function logout() { auth.logout(); router.push('/login') }
 
 // ===== 通知铃铛 =====
@@ -69,21 +94,25 @@ const TYPE_TAG = {
 onMounted(() => {
   fetchUnreadCount()
   pollTimer = setInterval(fetchUnreadCount, 60000)
+  checkMobile()
+  window.addEventListener('resize', onWindowResize)
 })
 
 onBeforeUnmount(() => {
   if (pollTimer) clearInterval(pollTimer)
+  window.removeEventListener('resize', onWindowResize)
+  clearTimeout(resizeTimer)
 })
 </script>
 
 <template>
   <el-container class="layout">
-    <el-aside :width="collapsed ? '64px' : '220px'" class="aside">
+    <el-aside :width="collapsed ? '64px' : '220px'" class="aside" :class="{ 'aside--mobile-hidden': isMobile }">
       <div class="brand">
         <span v-show="!collapsed" class="brand-text">科研成果管理系统</span>
       </div>
 
-      <el-menu :default-active="activeMenu" :collapse="collapsed" router class="menu">
+      <el-menu :default-active="activeMenu" :collapse="collapsed" router class="menu" @select="onMenuSelect">
         <el-sub-menu index="reg">
           <template #title><el-icon><Files /></el-icon><span>成果登记</span></template>
           <el-menu-item index="/papers"><el-icon><Document /></el-icon><span>论文管理</span></el-menu-item>
@@ -125,7 +154,10 @@ onBeforeUnmount(() => {
     <el-container>
       <el-header class="header">
         <div class="header-left">
-          <el-icon class="collapse-btn" @click="collapsed = !collapsed">
+          <el-icon v-if="isMobile" class="collapse-btn" @click="onHamburger">
+            <Fold />
+          </el-icon>
+          <el-icon v-else class="collapse-btn" @click="collapsed = !collapsed">
             <component :is="collapsed ? Expand : Fold" />
           </el-icon>
           <span class="page-title">{{ pageTitle }}</span>
@@ -172,6 +204,54 @@ onBeforeUnmount(() => {
         <router-view :key="route.path" />
       </el-main>
     </el-container>
+
+    <!-- 移动端抽屉式侧栏(<768px 触发) -->
+    <el-drawer
+      v-model="drawerVisible"
+      direction="ltr"
+      size="240px"
+      :with-header="true"
+      title="菜单"
+      class="mobile-drawer"
+    >
+      <el-menu :default-active="activeMenu" router class="drawer-menu" @select="onMenuSelect">
+        <el-sub-menu index="reg">
+          <template #title><el-icon><Files /></el-icon><span>成果登记</span></template>
+          <el-menu-item index="/papers"><el-icon><Document /></el-icon><span>论文管理</span></el-menu-item>
+          <el-menu-item index="/patents"><el-icon><Medal /></el-icon><span>专利管理</span></el-menu-item>
+          <el-menu-item index="/copyrights"><el-icon><Files /></el-icon><span>软件著作权</span></el-menu-item>
+          <el-menu-item index="/transforms"><el-icon><Refresh /></el-icon><span>成果转化</span></el-menu-item>
+        </el-sub-menu>
+
+        <el-menu-item index="/fees"><el-icon><Wallet /></el-icon><span>费用管理</span></el-menu-item>
+        <el-menu-item index="/reminders"><el-icon><Bell /></el-icon><span>申报提醒</span></el-menu-item>
+        <el-menu-item index="/search"><el-icon><Search /></el-icon><span>全文检索</span></el-menu-item>
+        <el-menu-item index="/dashboard"><el-icon><DataAnalysis /></el-icon><span>统计看板</span></el-menu-item>
+
+        <el-sub-menu index="workflow">
+          <template #title><el-icon><Tickets /></el-icon><span>工作流</span></template>
+          <el-menu-item index="/approvals"><el-icon><Checked /></el-icon><span>审批管理</span></el-menu-item>
+          <el-menu-item index="/notifications"><el-icon><Notification /></el-icon><span>通知中心</span></el-menu-item>
+        </el-sub-menu>
+
+        <el-sub-menu index="data">
+          <template #title><el-icon><PieChart /></el-icon><span>数据</span></template>
+          <el-menu-item index="/reports"><el-icon><PieChart /></el-icon><span>报表中心</span></el-menu-item>
+        </el-sub-menu>
+
+        <el-menu-item index="/audit-logs"><el-icon><List /></el-icon><span>操作日志</span></el-menu-item>
+
+        <el-sub-menu v-if="isSysAdmin" index="sys">
+          <template #title><el-icon><Setting /></el-icon><span>系统管理</span></template>
+          <el-menu-item index="/users"><el-icon><Setting /></el-icon><span>用户管理</span></el-menu-item>
+          <el-menu-item index="/departments"><el-icon><Setting /></el-icon><span>部门管理</span></el-menu-item>
+          <el-menu-item index="/dictionaries"><el-icon><Setting /></el-icon><span>数据字典</span></el-menu-item>
+          <el-menu-item index="/integrations"><el-icon><Setting /></el-icon><span>接口配置</span></el-menu-item>
+          <el-menu-item index="/rbac"><el-icon><Lock /></el-icon><span>RBAC权限</span></el-menu-item>
+          <el-menu-item index="/backup"><el-icon><FolderChecked /></el-icon><span>备份管理</span></el-menu-item>
+        </el-sub-menu>
+      </el-menu>
+    </el-drawer>
   </el-container>
 </template>
 
@@ -212,4 +292,25 @@ onBeforeUnmount(() => {
 .notif-popover-time { font-size: 11px; color: var(--text-secondary); margin-left: auto; }
 .notif-popover-text { font-size: 13px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .notif-popover-empty { text-align: center; color: var(--text-secondary); padding: 20px 0; font-size: 13px; }
+
+/* ===== 响应式:<768px 隐藏常驻侧栏,内容区全宽,顶栏紧凑 ===== */
+@media (max-width: 768px) {
+  .aside--mobile-hidden {
+    display: none;
+  }
+  .header {
+    padding: 0 12px;
+  }
+  .user {
+    display: none; /* 窄屏隐藏用户信息,腾出空间给铃铛和退出 */
+  }
+  .main {
+    padding: 10px;
+  }
+}
+
+/* 移动端抽屉内菜单(el-drawer 会被传送到 body,需要 :deep 穿透 scoped) */
+.drawer-menu { border-right: none; }
+.drawer-menu :deep(.el-menu-item) { position: relative; }
+.drawer-menu :deep(.el-menu-item.is-active) { background: var(--el-color-primary-light-9); color: var(--el-color-primary); }
 </style>

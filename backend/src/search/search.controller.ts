@@ -11,11 +11,16 @@ export class SearchController {
 
   @Get()
   search(
-    @Query('q')     q: string,
+    @Query('q') q: string,
     @Query('types') types: string,
-    @CurrentUser()  user: AuthUser,
+    @CurrentUser() user: AuthUser,
   ) {
-    const typeArr = types ? types.split(',').map((s) => s.trim()).filter(Boolean) : [];
+    const typeArr = types
+      ? types
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
     return this.svc.search(q ?? '', typeArr, user);
   }
 }

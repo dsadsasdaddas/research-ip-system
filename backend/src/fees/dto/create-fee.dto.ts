@@ -1,8 +1,14 @@
-import { IsOptional, IsString, IsNumber, IsDateString, IsIn } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsDateString,
+  IsIn,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 const PAY_STATUSES = ['pending', 'paid', 'overdue', 'cancelled'] as const;
-const FEE_TYPES    = ['申请费', '年费', '代理费', '维持费', '复审费'] as const;
+const FEE_TYPES = ['申请费', '年费', '代理费', '维持费', '复审费'] as const;
 const FUND_SOURCES = ['院内经费', '纵向课题', '横向课题', '外协资助'] as const;
 const RELATION_TYPES = ['patent', 'copyright'] as const;
 

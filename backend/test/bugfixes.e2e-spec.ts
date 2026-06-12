@@ -58,8 +58,18 @@ describe('Bug Fixes (e2e)', () => {
   let eeDeptId: number;
 
   // 用于清理的测试数据 ID
-  const createdIds: { papers: number[]; patents: number[]; copyrights: number[]; transforms: number[]; attachments: number[] } = {
-    papers: [], patents: [], copyrights: [], transforms: [], attachments: [],
+  const createdIds: {
+    papers: number[];
+    patents: number[];
+    copyrights: number[];
+    transforms: number[];
+    attachments: number[];
+  } = {
+    papers: [],
+    patents: [],
+    copyrights: [],
+    transforms: [],
+    attachments: [],
   };
 
   beforeAll(async () => {
@@ -68,7 +78,9 @@ describe('Bug Fixes (e2e)', () => {
     csUserToken = await login(app, 'cs_user', 'Test@123');
     eeUserToken = await login(app, 'ee_user', 'Test@123');
     secretToken = await login(app, 'secret', 'Test@123');
-    const usersRes = await request(app.getHttpServer()).get('/api/users').set(auth(adminToken));
+    const usersRes = await request(app.getHttpServer())
+      .get('/api/users')
+      .set(auth(adminToken));
     const users = usersRes.body as PublicUserRecord[];
     csDeptId = users.find((u) => u.username === 'cs_user')?.deptId ?? 0;
     eeDeptId = users.find((u) => u.username === 'ee_user')?.deptId ?? 0;
@@ -79,19 +91,34 @@ describe('Bug Fixes (e2e)', () => {
   afterAll(async () => {
     // 清理所有测试数据
     for (const id of createdIds.attachments) {
-      await request(app.getHttpServer()).delete(`/api/attachments/${id}`).set(auth(adminToken)).catch(() => {});
+      await request(app.getHttpServer())
+        .delete(`/api/attachments/${id}`)
+        .set(auth(adminToken))
+        .catch(() => {});
     }
     for (const id of createdIds.papers) {
-      await request(app.getHttpServer()).delete(`/api/papers/${id}`).set(auth(adminToken)).catch(() => {});
+      await request(app.getHttpServer())
+        .delete(`/api/papers/${id}`)
+        .set(auth(adminToken))
+        .catch(() => {});
     }
     for (const id of createdIds.patents) {
-      await request(app.getHttpServer()).delete(`/api/patents/${id}`).set(auth(adminToken)).catch(() => {});
+      await request(app.getHttpServer())
+        .delete(`/api/patents/${id}`)
+        .set(auth(adminToken))
+        .catch(() => {});
     }
     for (const id of createdIds.copyrights) {
-      await request(app.getHttpServer()).delete(`/api/copyrights/${id}`).set(auth(adminToken)).catch(() => {});
+      await request(app.getHttpServer())
+        .delete(`/api/copyrights/${id}`)
+        .set(auth(adminToken))
+        .catch(() => {});
     }
     for (const id of createdIds.transforms) {
-      await request(app.getHttpServer()).delete(`/api/transforms/${id}`).set(auth(adminToken)).catch(() => {});
+      await request(app.getHttpServer())
+        .delete(`/api/transforms/${id}`)
+        .set(auth(adminToken))
+        .catch(() => {});
     }
     await app.close();
   });
@@ -117,7 +144,9 @@ describe('Bug Fixes (e2e)', () => {
         .get('/api/papers')
         .set(auth(csUserToken));
       expect(res.status).toBe(200);
-      const titles = (res.body as TitledRecord[]).map((p) => p.title);
+      const titles = (res.body as { items: TitledRecord[] }).items.map(
+        (p) => p.title,
+      );
       expect(titles).not.toContain('【涉密】机密论文测试');
     });
 
@@ -133,7 +162,9 @@ describe('Bug Fixes (e2e)', () => {
         .get('/api/papers')
         .set(auth(secretToken));
       expect(res.status).toBe(200);
-      const titles = (res.body as TitledRecord[]).map((p) => p.title);
+      const titles = (res.body as { items: TitledRecord[] }).items.map(
+        (p) => p.title,
+      );
       expect(titles).toContain('【涉密】机密论文测试');
     });
 
@@ -253,7 +284,9 @@ describe('Bug Fixes (e2e)', () => {
         .get(`/api/attachments?relationType=paper&relationId=${eePaperId}`)
         .set(auth(csUserToken));
       expect(listRes.status).toBe(200);
-      expect((listRes.body as AttachmentRecord[]).map((a) => a.id)).not.toContain(attachmentId);
+      expect(
+        (listRes.body as AttachmentRecord[]).map((a) => a.id),
+      ).not.toContain(attachmentId);
 
       const downloadRes = await request(app.getHttpServer())
         .get(`/api/attachments/${attachmentId}/download`)
@@ -278,7 +311,9 @@ describe('Bug Fixes (e2e)', () => {
       expect(res.status).toBe(201);
       expect(res.body.token).toBeDefined();
       // 解码 JWT payload（base64）
-      const payload = JSON.parse(Buffer.from(res.body.token.split('.')[1], 'base64url').toString());
+      const payload = JSON.parse(
+        Buffer.from(res.body.token.split('.')[1], 'base64url').toString(),
+      );
       expect(payload).toHaveProperty('realName');
       expect(payload.realName).toBe('系统管理员');
     });
@@ -304,7 +339,7 @@ describe('Bug Fixes (e2e)', () => {
       expect(searchRes.status).toBe(200);
       // 如果转义生效，搜索 % 不会匹配所有记录
       // （只是确认不会崩溃，且结果合理）
-      expect(Array.isArray(searchRes.body)).toBe(true);
+      expect(Array.isArray(searchRes.body.items)).toBe(true);
     });
 
     it('keyword=_ 不应匹配任意单字符', async () => {
@@ -312,7 +347,7 @@ describe('Bug Fixes (e2e)', () => {
         .get('/api/patents?keyword=_')
         .set(auth(adminToken));
       expect(searchRes.status).toBe(200);
-      expect(Array.isArray(searchRes.body)).toBe(true);
+      expect(Array.isArray(searchRes.body.items)).toBe(true);
     });
   });
 
@@ -326,7 +361,11 @@ describe('Bug Fixes (e2e)', () => {
       const createRes = await request(app.getHttpServer())
         .post('/api/users')
         .set(auth(adminToken))
-        .send({ username: uniqueName, password: 'Test@123456', realName: '审计测试' });
+        .send({
+          username: uniqueName,
+          password: 'Test@123456',
+          realName: '审计测试',
+        });
       expect(createRes.status).toBe(201);
       const userId = createRes.body.id;
 
@@ -343,9 +382,11 @@ describe('Bug Fixes (e2e)', () => {
       expect(logRes.status).toBe(200);
 
       // 确认没有明文密码
-      const logs = Array.isArray(logRes.body) ? logRes.body as AuditLogRecord[] : (logRes.body as PagedAuditLogResponse).items ?? [];
-      const relevantLog = logs.find((l) =>
-        l.path?.includes(`/users/${userId}`) && l.action === 'update',
+      const logs = Array.isArray(logRes.body)
+        ? (logRes.body as AuditLogRecord[])
+        : ((logRes.body as PagedAuditLogResponse).items ?? []);
+      const relevantLog = logs.find(
+        (l) => l.path?.includes(`/users/${userId}`) && l.action === 'update',
       );
       if (relevantLog?.body) {
         expect(relevantLog.body).not.toContain('NewPass@123');
@@ -353,7 +394,10 @@ describe('Bug Fixes (e2e)', () => {
       }
 
       // 清理
-      await request(app.getHttpServer()).delete(`/api/users/${userId}`).set(auth(adminToken)).catch(() => {});
+      await request(app.getHttpServer())
+        .delete(`/api/users/${userId}`)
+        .set(auth(adminToken))
+        .catch(() => {});
     });
   });
 
@@ -377,7 +421,10 @@ describe('Bug Fixes (e2e)', () => {
       expect(updateRes.status).toBe(400);
 
       // 清理
-      await request(app.getHttpServer()).delete(`/api/users/${userId}`).set(auth(adminToken)).catch(() => {});
+      await request(app.getHttpServer())
+        .delete(`/api/users/${userId}`)
+        .set(auth(adminToken))
+        .catch(() => {});
     });
   });
 
@@ -406,11 +453,15 @@ describe('Bug Fixes (e2e)', () => {
   // ================================================================
   describe('Fix #12 — 搜索引擎密级过滤', () => {
     it('researcher 搜索结果不包含涉密论文', async () => {
+      // 注意:检索接口的查询参数名是 `q`(见 SearchController @Query('q'))。
+      // 历史上这里误写成 `keyword=`,导致 q 为 undefined → 走空关键字早退分支 → items 恒为 [] ,
+      // 断言对空数组恒真,根本没真正测到密级过滤。已修正为 q=。
       const res = await request(app.getHttpServer())
-        .get('/api/search?keyword=涉密')
+        .get('/api/search?q=' + encodeURIComponent('系统'))
         .set(auth(csUserToken));
       expect(res.status).toBe(200);
-      // 搜索结果中不应有涉密论文
+      expect(res.body.engine).toBe('rust');
+      // 搜索结果中不应有涉密论文(researcher 只能看到公开/内部,看不到涉密)
       const items = (res.body as SearchResponse).items ?? [];
       items.forEach((item) => {
         expect(item.title).not.toContain('机密');

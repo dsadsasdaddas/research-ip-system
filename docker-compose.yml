@@ -1,22 +1,116 @@
-# 用 Docker 跑一个 MySQL 数据库,免去本地安装的麻烦。
-# 启动: docker compose up -d   (-d = 后台运行)
-# 查看: docker compose ps
-# 停止: docker compose down     (容器删除,但数据保留在下面的 mysql-data 卷里)
+# =============================================================================
+# 科研成果与知识产权管理系统 —— 全栈一键启动
+#
+#   docker compose up -d        启动 mysql + redis + backend + frontend 四个服务
+#   docker compose ps           查看运行状态
+#   docker compose logs -f      跟随日志
+#   docker compose down         停止并删除容器(数据保留在 mysql-data 卷)
+#
+# 首次启动时 MySQL 会自动执行挂载到 /docker-entrypoint-initdb.d 的
+# database/schema.sql(建表)与 database/seed.sql(默认数据 + 演示数据)。
+#
+# 已在本机端到端实跑验证(见 docs/CHANGELOG-2026-06-12.md §6.3 / §7):
+# 四容器全 Up、登录 201、Rust 引擎 in-container、Redis 缓存命中。
+# 注:本机已有原生 MySQL(3306)/原生 Redis(6379)/后端 dev(3001),
+# 全栈验证时用 docker-compose.verify.yml 把宿主端口错开为 3307/3002/8081,
+# 避免与现有开发环境冲突。
+# =============================================================================
 services:
+  # ----------------------------------------------------------------------------
+  # MySQL 8.0:根/root1234,库 research_db,utf8mb4,带健康检查。
+  # 首次启动自动跑 schema.sql + seed.sql 初始化库结构与演示数据。
+  # ----------------------------------------------------------------------------
   mysql:
     image: mysql:8.0
-    container_name: homeworl-mysql
+    container_name: research-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root1234     # 本地开发用的密码;后端连库时也用它(写进 .env,不进 git)
-      MYSQL_DATABASE: research_db        # 容器第一次启动时自动创建我们的数据库
+      MYSQL_ROOT_PASSWORD: root1234
+      MYSQL_DATABASE: research_db
       TZ: Asia/Shanghai
     ports:
-      - "3306:3306"                      # 本机 3306 端口 -> 容器里的 3306,后端就是连本机 3306
+      - "3306:3306"
     volumes:
-      - mysql-data:/var/lib/mysql        # 数据存到命名卷里,容器删了数据也不丢
-    # 设置 utf8mb4,保证中文(论文标题、摘要等)不乱码
+      - mysql-data:/var/lib/mysql
+      # 首次建库时按文件名顺序执行:01-schema 先建表,02-seed 再灌数据
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot1234"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ----------------------------------------------------------------------------
+  # 后端 NestJS:监听 3001,全局前缀 /api。
+  # 镜像内编译 Rust napi 原生搜索插件(平台相关 cdylib)。
+  # 依赖 mysql 健康后才启动;启用 Redis 缓存(REDIS_HOST=redis 指向下方 redis 服务)。
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: .               # 仓库根目录,这样 Dockerfile 里能 COPY backend/ frontend/ ...
+      dockerfile: backend/Dockerfile
+    container_name: research-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: root1234      # 与 compose MySQL 一致(本机 .env 用的是 wangyue789,此处不依赖)
+      DB_NAME: research_db
+      JWT_SECRET: dev-secret-research-mis-2026
+      TYPEORM_SYNC: "false"
+      TZ: Asia/Shanghai
+      # Redis 缓存:指向 compose 内的 redis 服务。未设置时 CacheService 会静默降级,
+      # 但生产应启用以挡住 stats/search 热路径(详见 backend/src/cache/cache.service.ts)。
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_TTL: "60"
+    ports:
+      - "3001:3001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ----------------------------------------------------------------------------
+  # Redis 7:纯缓存用途(无持久化需求),maxmemory 128mb + allkeys-lru 淘汰。
+  # backend 通过 REDIS_HOST=redis 访问;本服务不对外暴露端口(仅 compose 内网互通),
+  # 需要宿主调试时在下方 ports 取消注释。
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: research-redis
+    restart: unless-stopped
+    command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    # ports:
+    #   - "6379:6379"
+
+  # ----------------------------------------------------------------------------
+  # 前端:nginx 提供 dist 静态文件,/api 反代到 backend:3001(同源)。
+  # 对外暴露 8080 -> 容器 80。
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: research-frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
 
 volumes:
   mysql-data:

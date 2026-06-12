@@ -1,18 +1,23 @@
 import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class UpdateScheduledReportTaskDto {
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   taskName?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   cronExpr?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   receivers?: string | null;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   channel?: string;
 
-  @IsOptional() @IsBoolean()
+  @IsOptional()
+  @IsBoolean()
   isActive?: boolean;
 }

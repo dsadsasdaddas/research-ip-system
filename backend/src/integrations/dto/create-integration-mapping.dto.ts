@@ -13,9 +13,11 @@ export class CreateIntegrationMappingDto {
   @IsString()
   internalField!: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   transformRule?: string | null;
 
-  @IsOptional() @IsBoolean()
+  @IsOptional()
+  @IsBoolean()
   isActive?: boolean;
 }

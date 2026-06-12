@@ -19,11 +19,23 @@ export class BackupService {
 
   /** 触发数据库备份 */
   async triggerBackup(user?: AuthUser): Promise<BackupLog> {
+    return this.runBackup('manual', user?.id ?? null, user?.username ?? null);
+  }
+
+  /**
+   * 执行一次备份。backupType: 'manual' | 'auto'。
+   * 抽出共享逻辑,供手动触发(POST /backup/trigger)与定时任务(cron)共用。§4 数据备份
+   */
+  async runBackup(
+    backupType: 'manual' | 'auto',
+    operatorId: number | null,
+    operatorName: string | null,
+  ): Promise<BackupLog> {
     const logEntry = this.backupLogRepo.create({
-      backupType: 'manual',
+      backupType,
       status: 'pending',
-      operatorId: user?.id ?? null,
-      operatorName: user?.username ?? null,
+      operatorId,
+      operatorName,
       startedAt: new Date(),
     });
     const savedLog = await this.backupLogRepo.save(logEntry);
@@ -35,7 +47,10 @@ export class BackupService {
         fs.mkdirSync(backupDir, { recursive: true });
       }
 
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const timestamp = new Date()
+        .toISOString()
+        .replace(/[:.]/g, '-')
+        .slice(0, 19);
       const fileName = `backup_${timestamp}.sql`;
       const filePath = path.join(backupDir, fileName);
 
@@ -126,10 +141,60 @@ export class BackupService {
   }
 
   /** 分页查询备份日志 */
-  async findAll(page?: number, pageSize?: number): Promise<PageResult<BackupLog>> {
+  async findAll(
+    page?: number,
+    pageSize?: number,
+  ): Promise<PageResult<BackupLog>> {
     const qb = this.backupLogRepo
       .createQueryBuilder('b')
       .orderBy('b.started_at', 'DESC');
     return paginate(qb, page, pageSize);
+  }
+
+  /**
+   * 保留期清理(§4 数据备份 30 天保留):
+   * 删除 started_at 早于 threshold 的 backup_log 行,并尽力删除其物理文件。
+   * 只删除 success/restored/failed 的记录,保留 restored 关联的源备份痕迹由调用方控制。
+   * 返回 { deletedRows, deletedFiles }。
+   */
+  async cleanupOldBackups(
+    retentionDays = 30,
+  ): Promise<{ deletedRows: number; deletedFiles: number }> {
+    const threshold = new Date(
+      Date.now() - retentionDays * 24 * 60 * 60 * 1000,
+    );
+
+    const oldLogs = await this.backupLogRepo
+      .createQueryBuilder('b')
+      .where('b.started_at < :threshold', { threshold })
+      .getMany();
+
+    if (oldLogs.length === 0) {
+      return { deletedRows: 0, deletedFiles: 0 };
+    }
+
+    let deletedFiles = 0;
+    for (const log of oldLogs) {
+      if (log.filePath) {
+        try {
+          if (fs.existsSync(log.filePath)) {
+            fs.unlinkSync(log.filePath);
+            deletedFiles += 1;
+          }
+        } catch {
+          // 文件删除失败不阻断记录清理
+        }
+      }
+    }
+
+    // 按 started_at 批量删除
+    const result = await this.backupLogRepo
+      .createQueryBuilder()
+      .delete()
+      .from(BackupLog)
+      .where('started_at < :threshold', { threshold })
+      .execute();
+
+    return { deletedRows: result.affected ?? 0, deletedFiles };
   }
 }

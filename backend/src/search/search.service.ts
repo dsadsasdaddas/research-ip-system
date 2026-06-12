@@ -7,8 +7,13 @@ import { Copyright } from '../copyrights/entities/copyright.entity';
 import type { AuthUser } from '../auth/types/auth-user.interface';
 import { getDeptFilter } from '../common/utils/dept-filter';
 import { getSecretLevels } from '../common/utils/secret-filter';
-import { RustSearchAdapter, RustSearchDoc, RustSearchDocType } from './rust-search-adapter';
+import {
+  RustSearchAdapter,
+  RustSearchDoc,
+  RustSearchDocType,
+} from './rust-search-adapter';
 import { SearchLogsService } from '../search-logs/search-logs.service';
+import { CacheService } from '../cache/cache.service';
 
 export interface SearchResultItem {
   type: 'paper' | 'patent' | 'copyright';
@@ -37,7 +42,9 @@ function isRequestedType(types: string[], type: RustSearchDocType): boolean {
 }
 
 function joinContent(parts: Array<string | number | null | undefined>): string {
-  return parts.filter((part) => part !== null && part !== undefined && part !== '').join(' ');
+  return parts
+    .filter((part) => part !== null && part !== undefined && part !== '')
+    .join(' ');
 }
 
 function keyOf(type: RustSearchDocType, id: number): string {
@@ -52,16 +59,60 @@ export class SearchService {
     @InjectRepository(Copyright) private copyrightRepo: Repository<Copyright>,
     private readonly rustSearch: RustSearchAdapter,
     @Optional() private readonly searchLogsService?: SearchLogsService,
+    @Optional() private readonly cache?: CacheService,
   ) {}
 
-  async search(q: string, types: string[], user: AuthUser): Promise<SearchResult> {
+  async search(
+    q: string,
+    types: string[],
+    user: AuthUser,
+  ): Promise<SearchResult> {
     const keyword = q.trim();
     if (!keyword) return { engine: 'rust', elapsedMs: 0, total: 0, items: [] };
 
+    // 检索结果缓存 60s:按关键词 + 类型 + 部门 + 密级范围 组合 key。
+    // 结果命中缓存时不再写检索日志(检索日志只在真实检索时记录,避免噪音)。
+    const cacheKey = SearchService.buildCacheKey(keyword, types, user);
+    if (this.cache) {
+      const cached = await this.cache.get<SearchResult>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    }
+
+    const result = await this.runSearch(keyword, types, user);
+    if (this.cache) {
+      await this.cache.set(cacheKey, result, 60);
+    }
+    return result;
+  }
+
+  private static buildCacheKey(
+    keyword: string,
+    types: string[],
+    user: AuthUser,
+  ): string {
+    const dept = getDeptFilter(user);
+    const levels = getSecretLevels(user).sort().join('|');
+    const typeKey = [...types].sort().join(',');
+    return `search:${dept ?? 'all'}:${levels}:${typeKey}:${keyword}`;
+  }
+
+  private async runSearch(
+    q: string,
+    types: string[],
+    user: AuthUser,
+  ): Promise<SearchResult> {
+    const keyword = q.trim();
     const startedAt = process.hrtime.bigint();
     const indexedItems = await this.loadIndexedItems(types, user);
     const docs = indexedItems.map((item) => item.doc);
-    const byKey = new Map(indexedItems.map((item) => [keyOf(item.doc.type, item.doc.id), item.result]));
+    const byKey = new Map(
+      indexedItems.map((item) => [
+        keyOf(item.doc.type, item.doc.id),
+        item.result,
+      ]),
+    );
 
     const hits = this.rustSearch.search(docs, keyword);
     const items = hits
@@ -74,27 +125,35 @@ export class SearchService {
 
     const elapsedMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
     // 异步记录检索日志（不阻塞搜索响应）
-    this.searchLogsService?.log({
-      keyword,
-      types: types.join(','),
-      resultCount: items.length,
-      elapsedMs,
-      engine: 'rust',
-      userId: user.id,
-      username: user.username,
-      deptId: user.deptId,
-    }).catch(() => {});
+    this.searchLogsService
+      ?.log({
+        keyword,
+        types: types.join(','),
+        resultCount: items.length,
+        elapsedMs,
+        engine: 'rust',
+        userId: user.id,
+        username: user.username,
+        deptId: user.deptId,
+      })
+      .catch(() => {});
     return { engine: 'rust', elapsedMs, total: items.length, items };
   }
 
-  private async loadIndexedItems(types: string[], user: AuthUser): Promise<IndexedSearchItem[]> {
+  private async loadIndexedItems(
+    types: string[],
+    user: AuthUser,
+  ): Promise<IndexedSearchItem[]> {
     const deptId = getDeptFilter(user);
     const allowedLevels = getSecretLevels(user);
     const items: IndexedSearchItem[] = [];
     const MAX_ROWS = 10000;
 
     if (isRequestedType(types, 'paper')) {
-      const qb = this.paperRepo.createQueryBuilder('p').orderBy('p.publish_year', 'DESC').limit(MAX_ROWS);
+      const qb = this.paperRepo
+        .createQueryBuilder('p')
+        .orderBy('p.publish_year', 'DESC')
+        .limit(MAX_ROWS);
       if (deptId != null) qb.andWhere('p.dept_id = :did', { did: deptId });
       qb.andWhere('p.secret_level IN (:...levels)', { levels: allowedLevels });
       const rows = await qb.getMany();
@@ -102,7 +161,10 @@ export class SearchService {
     }
 
     if (isRequestedType(types, 'patent')) {
-      const qb = this.patentRepo.createQueryBuilder('p').orderBy('p.filing_date', 'DESC').limit(MAX_ROWS);
+      const qb = this.patentRepo
+        .createQueryBuilder('p')
+        .orderBy('p.filing_date', 'DESC')
+        .limit(MAX_ROWS);
       if (deptId != null) qb.andWhere('p.dept_id = :did', { did: deptId });
       qb.andWhere('p.secret_level IN (:...levels)', { levels: allowedLevels });
       const rows = await qb.getMany();
@@ -110,7 +172,10 @@ export class SearchService {
     }
 
     if (isRequestedType(types, 'copyright')) {
-      const qb = this.copyrightRepo.createQueryBuilder('c').orderBy('c.register_date', 'DESC').limit(MAX_ROWS);
+      const qb = this.copyrightRepo
+        .createQueryBuilder('c')
+        .orderBy('c.register_date', 'DESC')
+        .limit(MAX_ROWS);
       if (deptId != null) qb.andWhere('c.dept_id = :did', { did: deptId });
       qb.andWhere('c.secret_level IN (:...levels)', { levels: allowedLevels });
       const rows = await qb.getMany();
@@ -123,7 +188,9 @@ export class SearchService {
   private indexPaper(row: Paper): IndexedSearchItem {
     const type: RustSearchDocType = 'paper';
     const title = row.title;
-    const meta = [row.authors, row.journal, row.publishYear].filter(Boolean).join(' · ');
+    const meta = [row.authors, row.journal, row.publishYear]
+      .filter(Boolean)
+      .join(' · ');
     return {
       doc: {
         type,
@@ -149,14 +216,24 @@ export class SearchService {
           row.dependProject,
         ]),
       },
-      result: { type, typeLabel: '论文', id: row.id, title, meta, createTime: row.createTime, score: 0 },
+      result: {
+        type,
+        typeLabel: '论文',
+        id: row.id,
+        title,
+        meta,
+        createTime: row.createTime,
+        score: 0,
+      },
     };
   }
 
   private indexPatent(row: Patent): IndexedSearchItem {
     const type: RustSearchDocType = 'patent';
     const title = row.name;
-    const meta = [row.patentType, row.legalStatus, row.applicationNo].filter(Boolean).join(' · ');
+    const meta = [row.patentType, row.legalStatus, row.applicationNo]
+      .filter(Boolean)
+      .join(' · ');
     return {
       doc: {
         type,
@@ -185,14 +262,24 @@ export class SearchService {
           row.secretLevel,
         ]),
       },
-      result: { type, typeLabel: '专利', id: row.id, title, meta, createTime: row.createTime, score: 0 },
+      result: {
+        type,
+        typeLabel: '专利',
+        id: row.id,
+        title,
+        meta,
+        createTime: row.createTime,
+        score: 0,
+      },
     };
   }
 
   private indexCopyright(row: Copyright): IndexedSearchItem {
     const type: RustSearchDocType = 'copyright';
     const title = row.name;
-    const meta = [row.copyrightOwner, row.registrationNo].filter(Boolean).join(' · ');
+    const meta = [row.copyrightOwner, row.registrationNo]
+      .filter(Boolean)
+      .join(' · ');
     return {
       doc: {
         type,
@@ -213,7 +300,15 @@ export class SearchService {
           row.secretLevel,
         ]),
       },
-      result: { type, typeLabel: '软著', id: row.id, title, meta, createTime: row.createTime, score: 0 },
+      result: {
+        type,
+        typeLabel: '软著',
+        id: row.id,
+        title,
+        meta,
+        createTime: row.createTime,
+        score: 0,
+      },
     };
   }
 }

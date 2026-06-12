@@ -7,7 +7,13 @@ import { AttachmentsService } from './attachments.service';
 import { AttachmentsController } from './attachments.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Attachment, AttachmentVersion, AttachmentAccessLog])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Attachment,
+      AttachmentVersion,
+      AttachmentAccessLog,
+    ]),
+  ],
   providers: [AttachmentsService],
   controllers: [AttachmentsController],
   exports: [AttachmentsService],

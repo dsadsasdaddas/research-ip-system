@@ -119,9 +119,9 @@ GET /api/search?q=关键词&types=paper,patent,copyright
 }
 ```
 
-## 8. 确定接口清单 v1
+## 8. 确定接口清单 v2
 
-> 本节记录当前项目已经确定的接口路径。后续新增接口必须尽量延续这些路径和返回习惯。
+> 本节记录当前项目已经确定的接口路径（2026-06-12 盘点更新，原 v1 中「暂不承诺」的审批/检索日志/报表/备份/涉密已全部落地，见 §8.14–§8.20）。后续新增接口必须尽量延续这些路径和返回习惯。
 
 ### 8.1 认证
 
@@ -508,12 +508,132 @@ transform_status
 result_type
 ```
 
-### 8.14 暂不承诺的接口
+### 8.14 审批流程（approvals）
 
-以下需求暂不定义正式接口，等实现时再补：
+> 对应说明书 §3.1.4 通用功能①。支持自定义审批流（按成果类型/等级）、流程节点、提交、逐节点审批（通过/驳回/退回/撤销）。
 
-- 审批流程接口
-- 报表导出接口
-- 数据备份/恢复接口
-- 涉密授权接口
-- 检索日志/热门关键词接口
+#### 审批流定义
+
+| 方法 | 路径 | 说明 | 角色 |
+|---|---|---|---|
+| GET | `/api/approvals/flows` | 审批流列表 | 登录用户 |
+| GET | `/api/approvals/flows/:id` | 审批流详情 | 登录用户 |
+| POST | `/api/approvals/flows` | 新建审批流 | `sys_admin` |
+| PATCH | `/api/approvals/flows/:id` | 更新审批流 | `sys_admin` |
+| DELETE | `/api/approvals/flows/:id` | 删除审批流 | `sys_admin` |
+| POST | `/api/approvals/flows/:flowId/nodes` | 为流程新增节点 | `sys_admin` |
+| PATCH | `/api/approvals/nodes/:id` | 更新节点 | `sys_admin` |
+| DELETE | `/api/approvals/nodes/:id` | 删除节点 | `sys_admin` |
+
+#### 审批实例
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | `/api/approvals/submit` | 提交业务进入审批（businessType + businessId） |
+| GET | `/api/approvals/my-pending` | 我的待办 |
+| GET | `/api/approvals/my-submitted` | 我发起的 |
+| GET | `/api/approvals/instances/:id` | 审批实例详情（含审批记录链） |
+| POST | `/api/approvals/instances/:id/approve` | 通过当前节点 |
+| POST | `/api/approvals/instances/:id/reject` | 驳回 |
+| POST | `/api/approvals/instances/:id/return` | 退回上一节点 |
+| POST | `/api/approvals/instances/:id/cancel` | 撤销 |
+
+### 8.15 检索日志（search-logs）
+
+> 对应说明书 §3.6 检索维度日志。每次检索自动记录关键词、命中的类型、耗时、引擎。
+
+| 方法 | 路径 | 说明 | 角色 |
+|---|---|---|---|
+| GET | `/api/search-logs` | 检索日志查询（支持 keyword/username/page/pageSize） | `sys_admin` |
+| GET | `/api/search-logs/hot-keywords` | 热门关键词聚合 | 登录用户 |
+
+### 8.16 报表导出（reports）
+
+> 对应说明书 §3.4 统计分析。支持自定义报表模板、定时任务、导出 Excel/PDF。
+
+| 方法 | 路径 | 说明 | 角色 |
+|---|---|---|---|
+| GET | `/api/reports/templates` | 报表模板列表 | 登录用户 |
+| POST | `/api/reports/templates` | 新建模板 | `sys_admin` |
+| PATCH | `/api/reports/templates/:id` | 更新模板 | `sys_admin` |
+| DELETE | `/api/reports/templates/:id` | 删除模板 | `sys_admin` |
+| POST | `/api/reports/export` | 导出报表，query/body 传 `templateId` + `format` | 登录用户 |
+| GET | `/api/reports/export-logs` | 导出记录 | 登录用户 |
+| GET | `/api/reports/exports/:id/download` | 下载已导出文件 | 登录用户 |
+| GET | `/api/reports/scheduled-tasks` | 定时报表任务列表 | `sys_admin` |
+| POST | `/api/reports/scheduled-tasks` | 新建定时报表（cron + 接收人 + 通道） | `sys_admin` |
+| PATCH | `/api/reports/scheduled-tasks/:id` | 更新定时任务 | `sys_admin` |
+| DELETE | `/api/reports/scheduled-tasks/:id` | 删除定时任务 | `sys_admin` |
+
+约束：
+
+- 导出格式支持 `xlsx`、`csv`；**`pdf` 当前为占位（暂以 xlsx 替代），尚未接真实 PDF 生成**。
+
+### 8.17 数据备份/恢复（backup）
+
+> 对应说明书 §4 数据备份：每日自动全量备份数据库，备份文件保留 30 天；支持手动触发。
+
+| 方法 | 路径 | 说明 | 角色 |
+|---|---|---|---|
+| POST | `/api/backup/trigger` | 手动触发一次备份 | `sys_admin` |
+| POST | `/api/backup/:id/restore` | 从指定备份恢复 | `sys_admin` |
+| GET | `/api/backup/logs` | 备份记录列表 | `sys_admin` |
+
+### 8.18 涉密授权（secret-access）
+
+> 对应说明书 §3.1 涉密管控 + §4 合规。涉密成果需经授权才能访问；授权可回收，访问全程留痕。
+
+| 方法 | 路径 | 说明 | 角色 |
+|---|---|---|---|
+| GET | `/api/secret-access/check` | 校验当前用户对某涉密成果是否有访问权 | 登录用户 |
+| GET | `/api/secret-access/grants` | 授权列表 | `sys_admin` / `secret_admin` |
+| POST | `/api/secret-access/grants` | 新增授权（业务类型 + 业务 ID + 范围 + 起止时间 + 原因） | `secret_admin` |
+| PATCH | `/api/secret-access/grants/:id/revoke` | 回收授权 | `secret_admin` |
+| POST | `/api/secret-access/logs` | 记录一次涉密访问 | 登录用户 |
+
+### 8.19 RBAC 权限（rbac）
+
+> 对应说明书 §2。除用户主角色外，提供细粒度角色-权限分配与权限校验。
+
+| 方法 | 路径 | 说明 | 角色 |
+|---|---|---|---|
+| GET | `/api/rbac/roles` | 角色列表 | `sys_admin` |
+| GET | `/api/rbac/roles/:id` | 角色详情 | `sys_admin` |
+| POST | `/api/rbac/roles` | 新建角色 | `sys_admin` |
+| PATCH | `/api/rbac/roles/:id` | 更新角色 | `sys_admin` |
+| GET | `/api/rbac/permissions` | 权限点列表 | `sys_admin` |
+| POST | `/api/rbac/permissions` | 新建权限点 | `sys_admin` |
+| POST | `/api/rbac/assign-permissions` | 为角色分配权限 | `sys_admin` |
+| GET | `/api/rbac/roles/:roleCode/permissions` | 查角色的权限 | `sys_admin` |
+| GET | `/api/rbac/check-permission` | 校验权限（`code` + `action`） | 登录用户 |
+
+### 8.20 通知（notifications）
+
+> 对应说明书 §3.5 提醒方式（站内消息）。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/notifications` | 我的通知列表 |
+| GET | `/api/notifications/unread-count` | 未读数量 |
+| PATCH | `/api/notifications/:id/read` | 标记单条已读 |
+| POST | `/api/notifications/mark-all-read` | 全部标记已读 |
+
+### 8.21 尚未实现的接口
+
+> 2026-06-12 重新盘点。本节**原列的三项均已落地**(早期 v1 误标为「未实现」),逐一核对如下;
+> 截至当前,**需求说明书要求、但尚未提供正式接口的项目为「无」**。剩余缺口都是运维/环境/工具类,
+> 不属于「接口缺失」,见本节末「非接口类待办」。
+
+#### 已落地(原误标为未实现,现更正)
+
+| 原「未实现」项 | 实现位置 | 证据 |
+| --- | --- | --- |
+| 移动端适配(§4) | `frontend/src/layouts/AppLayout.vue`(汉堡抽屉)、`DashboardView.vue`/`ResourcePage.vue`(响应式)、`styles/index.css`(`@media ≤768px`) | Playwright 实机渲染 375×812 截图见 `docs/screenshots/mobile-*.png`;`frontend build` 通过 |
+| 报表 PDF 真实导出 | `src/reports/reports.service.ts`(`pdfkit` 真渲染,`format=pdf` 分支 + `generatePdf`) | e2e `/api/reports/export-logs` 200;依赖 `pdfkit`+`@types/pdfkit` 已装 |
+| `audit_log` 字段级变更(§6.2) | `src/common/subscribers/audit-change.subscriber.ts`(TypeORM subscriber,afterUpdate/afterRemove);实体 `audit-log.entity.ts` §6.2 列(`operate_type/table_name/record_id/old_value/new_value/ip_address/operate_time`);迁移 `004_audit_log_field_level.sql` 已上库 | `scripts/replay-audit.js` dry-run 已读出真实字段级行并生成有效 SQL(见 `docs/CHANGELOG-2026-06-12.md`) |
+
+#### 非接口类待办(运维/环境/工具,非 API 缺失)
+
+- **Docker 全栈实跑验证**:`docker-compose.yml`+多阶段 Dockerfile 已编写,本机 Docker Desktop 未运行,未实跑 `compose up`。详见 `docs/CHANGELOG-2026-06-12.md` 已知限制。
+- **Redis 缓存真实环境验证**:已实现 + 降级(`REDIS_HOST` 未设时静默跳过,e2e 全绿走降级路径);真 Redis 命中率待配 Redis 环境压测。
+- **灾备 RPO ≤ 30min**:每日全量只保 RPO ≤ 24h;达 30min 需 binlog PITR 或把 `BACKUP_CRON` 改每 30 分钟。应用层已补**审计日志回放工具** `scripts/replay-audit.js`(从全量备份 + 之后审计日志重放出分钟级 RPO)。详见 `docs/DISASTER_RECOVERY.md`。

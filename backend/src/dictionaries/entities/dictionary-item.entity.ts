@@ -1,4 +1,10 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 /** 字典项表：定义某个字典类型下的具体选项 */
 @Entity('dictionary_item')
@@ -18,16 +24,36 @@ export class DictionaryItem {
   @Column({ name: 'sort_order', type: 'int', default: 0, comment: '排序号' })
   sortOrder!: number;
 
-  @Column({ type: 'varchar', length: 30, nullable: true, comment: '前端标签颜色' })
+  @Column({
+    type: 'varchar',
+    length: 30,
+    nullable: true,
+    comment: '前端标签颜色',
+  })
   color!: string | null;
 
-  @Column({ name: 'is_default', type: 'boolean', default: false, comment: '是否默认项' })
+  @Column({
+    name: 'is_default',
+    type: 'boolean',
+    default: false,
+    comment: '是否默认项',
+  })
   isDefault!: boolean;
 
-  @Column({ name: 'is_system', type: 'boolean', default: false, comment: '是否系统内置' })
+  @Column({
+    name: 'is_system',
+    type: 'boolean',
+    default: false,
+    comment: '是否系统内置',
+  })
   isSystem!: boolean;
 
-  @Column({ name: 'is_active', type: 'boolean', default: true, comment: '是否启用' })
+  @Column({
+    name: 'is_active',
+    type: 'boolean',
+    default: true,
+    comment: '是否启用',
+  })
   isActive!: boolean;
 
   @Column({ type: 'varchar', length: 255, nullable: true, comment: '备注' })

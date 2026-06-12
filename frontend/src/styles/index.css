@@ -47,3 +47,14 @@ body {
   border: 1px solid var(--border-color);
   border-radius: 8px;
 }
+
+/* —— 响应式表格:窄屏下表格容器不撑破视口,由 el-table 内部横向滚动 —— */
+@media (max-width: 768px) {
+  /* 卡片允许内部内容收缩(el-table 横向滚动条才不会被挤出) */
+  .app-card {
+    min-width: 0;
+  }
+  .el-table {
+    width: 100% !important;
+  }
+}

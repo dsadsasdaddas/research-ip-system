@@ -17,15 +17,32 @@ export class Transform {
 
   // ========== 关联成果 ==========
 
-  @Column({ type: 'varchar', name: 'result_type', length: 20, nullable: true, comment: '成果类型:paper/patent/copyright' })
+  @Column({
+    type: 'varchar',
+    name: 'result_type',
+    length: 20,
+    nullable: true,
+    comment: '成果类型:paper/patent/copyright',
+  })
   resultType!: string | null;
 
-  @Column({ name: 'result_id', type: 'int', nullable: true, comment: '关联成果ID' })
+  @Column({
+    name: 'result_id',
+    type: 'int',
+    nullable: true,
+    comment: '关联成果ID',
+  })
   resultId!: number | null;
 
   // ========== 合同基础信息 ==========
 
-  @Column({ type: 'varchar', name: 'contract_no', length: 100, nullable: true, comment: '合同编号' })
+  @Column({
+    type: 'varchar',
+    name: 'contract_no',
+    length: 100,
+    nullable: true,
+    comment: '合同编号',
+  })
   contractNo!: string | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true, comment: '交易对方' })
@@ -33,19 +50,32 @@ export class Transform {
 
   @Column({
     name: 'contract_amount',
-    type: 'decimal', precision: 14, scale: 2,
-    nullable: true, comment: '合同金额(元)',
+    type: 'decimal',
+    precision: 14,
+    scale: 2,
+    nullable: true,
+    comment: '合同金额(元)',
   })
   contractAmount!: number | null;
 
   @Column({
     name: 'received_amount',
-    type: 'decimal', precision: 14, scale: 2,
-    nullable: true, default: 0, comment: '已到账金额(元)',
+    type: 'decimal',
+    precision: 14,
+    scale: 2,
+    nullable: true,
+    default: 0,
+    comment: '已到账金额(元)',
   })
   receivedAmount!: number | null;
 
-  @Column({ type: 'varchar', name: 'transform_date', length: 20, nullable: true, comment: '转化日期(YYYY-MM-DD)' })
+  @Column({
+    type: 'varchar',
+    name: 'transform_date',
+    length: 20,
+    nullable: true,
+    comment: '转化日期(YYYY-MM-DD)',
+  })
   transformDate!: string | null;
 
   // ========== 转化类型 §3.2 ==========
@@ -69,34 +99,79 @@ export class Transform {
   })
   finishStatus!: string;
 
-  @Column({ name: 'abnormal_reason', type: 'text', nullable: true, comment: '异常原因(中止/失败/作废时必填)' })
+  @Column({
+    name: 'abnormal_reason',
+    type: 'text',
+    nullable: true,
+    comment: '异常原因(中止/失败/作废时必填)',
+  })
   abnormalReason!: string | null;
 
   // ========== 收益分配 §3.2 ==========
 
-  @Column({ type: 'varchar', name: 'distribute_ratio', length: 255, nullable: true, comment: '收益分配比例描述(院内/团队/个人)' })
+  @Column({
+    type: 'varchar',
+    name: 'distribute_ratio',
+    length: 255,
+    nullable: true,
+    comment: '收益分配比例描述(院内/团队/个人)',
+  })
   distributeRatio!: string | null;
 
   // ========== 归属 ==========
 
-  @Column({ name: 'dept_id', type: 'int', nullable: true, comment: '所属部门ID' })
+  @Column({
+    name: 'dept_id',
+    type: 'int',
+    nullable: true,
+    comment: '所属部门ID',
+  })
   deptId!: number | null;
 
-  @Column({ type: 'varchar', name: 'create_user', length: 100, nullable: true, comment: '登记人' })
+  @Column({
+    type: 'varchar',
+    name: 'create_user',
+    length: 100,
+    nullable: true,
+    comment: '登记人',
+  })
   createUser!: string | null;
 
   // ========== 审批与归档 ==========
 
-  @Column({ type: 'varchar', name: 'approval_status', length: 30, default: 'draft', comment: '审批状态' })
+  @Column({
+    type: 'varchar',
+    name: 'approval_status',
+    length: 30,
+    default: 'draft',
+    comment: '审批状态',
+  })
   approvalStatus!: string;
 
-  @Column({ type: 'varchar', name: 'archive_status', length: 30, default: 'normal', comment: '归档状态' })
+  @Column({
+    type: 'varchar',
+    name: 'archive_status',
+    length: 30,
+    default: 'normal',
+    comment: '归档状态',
+  })
   archiveStatus!: string;
 
-  @Column({ name: 'is_deleted', type: 'boolean', default: false, comment: '软删除标记' })
+  @Column({
+    name: 'is_deleted',
+    type: 'boolean',
+    default: false,
+    comment: '软删除标记',
+  })
   isDeleted!: boolean;
 
-  @Column({ name: 'follow_up_status', type: 'varchar', length: 50, default: 'pending', comment: '后续效益填报状态' })
+  @Column({
+    name: 'follow_up_status',
+    type: 'varchar',
+    length: 50,
+    default: 'pending',
+    comment: '后续效益填报状态',
+  })
   followUpStatus!: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true, comment: '备注' })

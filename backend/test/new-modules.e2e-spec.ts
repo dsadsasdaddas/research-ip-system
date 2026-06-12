@@ -43,20 +43,34 @@ describe('New Modules (e2e)', () => {
     secretToken = await login(app, 'secret', 'Test@123');
     csUserToken = await login(app, 'cs_user', 'Test@123');
 
-    const usersRes = await request(app.getHttpServer()).get('/api/users').set(auth(adminToken));
-    adminId = (usersRes.body as Array<{ username: string; id: number }>).find((u) => u.username === 'admin')?.id ?? 0;
+    const usersRes = await request(app.getHttpServer())
+      .get('/api/users')
+      .set(auth(adminToken));
+    adminId =
+      (usersRes.body as Array<{ username: string; id: number }>).find(
+        (u) => u.username === 'admin',
+      )?.id ?? 0;
     expect(adminId).toBeGreaterThan(0);
   });
 
   afterAll(async () => {
     for (const id of created.templateIds) {
-      await request(app.getHttpServer()).delete(`/api/reports/templates/${id}`).set(auth(adminToken)).catch(() => {});
+      await request(app.getHttpServer())
+        .delete(`/api/reports/templates/${id}`)
+        .set(auth(adminToken))
+        .catch(() => {});
     }
     for (const id of created.flowIds) {
-      await request(app.getHttpServer()).delete(`/api/approvals/flows/${id}`).set(auth(adminToken)).catch(() => {});
+      await request(app.getHttpServer())
+        .delete(`/api/approvals/flows/${id}`)
+        .set(auth(adminToken))
+        .catch(() => {});
     }
     for (const id of created.papers) {
-      await request(app.getHttpServer()).delete(`/api/papers/${id}`).set(auth(adminToken)).catch(() => {});
+      await request(app.getHttpServer())
+        .delete(`/api/papers/${id}`)
+        .set(auth(adminToken))
+        .catch(() => {});
     }
     await app.close();
   });
@@ -151,7 +165,9 @@ describe('New Modules (e2e)', () => {
         .set(auth(adminToken));
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('items');
-      const keywords = (res.body.items as Array<{ keyword: string }>).map((l) => l.keyword);
+      const keywords = (res.body.items as Array<{ keyword: string }>).map(
+        (l) => l.keyword,
+      );
       expect(keywords).toContain(uniqueKeyword);
     });
 
@@ -175,7 +191,11 @@ describe('New Modules (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/approvals/flows')
         .set(auth(csUserToken))
-        .send({ flowCode: 'forbidden', flowName: '禁止', businessType: 'paper' });
+        .send({
+          flowCode: 'forbidden',
+          flowName: '禁止',
+          businessType: 'paper',
+        });
       expect(res.status).toBe(403);
     });
 
@@ -183,7 +203,12 @@ describe('New Modules (e2e)', () => {
       const flowRes = await request(app.getHttpServer())
         .post('/api/approvals/flows')
         .set(auth(adminToken))
-        .send({ flowCode: `paper_flow_${Date.now()}`, flowName: '论文审批流程', businessType: 'paper', isActive: true });
+        .send({
+          flowCode: `paper_flow_${Date.now()}`,
+          flowName: '论文审批流程',
+          businessType: 'paper',
+          isActive: true,
+        });
       expect(flowRes.status).toBe(201);
       flowId = flowRes.body.id;
       created.flowIds.push(flowId);
@@ -191,14 +216,28 @@ describe('New Modules (e2e)', () => {
       const n1 = await request(app.getHttpServer())
         .post(`/api/approvals/flows/${flowId}/nodes`)
         .set(auth(adminToken))
-        .send({ flowId, nodeCode: 'step1', nodeName: '初审', nodeOrder: 1, approverRole: 'leader', allowReject: true });
+        .send({
+          flowId,
+          nodeCode: 'step1',
+          nodeName: '初审',
+          nodeOrder: 1,
+          approverRole: 'leader',
+          allowReject: true,
+        });
       expect(n1.status).toBe(201);
       node1Id = n1.body.id;
 
       const n2 = await request(app.getHttpServer())
         .post(`/api/approvals/flows/${flowId}/nodes`)
         .set(auth(adminToken))
-        .send({ flowId, nodeCode: 'step2', nodeName: '终审', nodeOrder: 2, approverRole: 'auditor', allowReject: true });
+        .send({
+          flowId,
+          nodeCode: 'step2',
+          nodeName: '终审',
+          nodeOrder: 2,
+          approverRole: 'auditor',
+          allowReject: true,
+        });
       expect(n2.status).toBe(201);
       node2Id = n2.body.id;
     });
@@ -228,7 +267,11 @@ describe('New Modules (e2e)', () => {
         const submitRes = await request(app.getHttpServer())
           .post('/api/approvals/submit')
           .set(auth(adminToken))
-          .send({ businessType: 'paper', businessId: paperId, title: '论文审批申请' });
+          .send({
+            businessType: 'paper',
+            businessId: paperId,
+            title: '论文审批申请',
+          });
         expect(submitRes.status).toBe(201);
         instanceId = submitRes.body.id;
         expect(submitRes.body.status).toBe('pending');
@@ -307,7 +350,11 @@ describe('New Modules (e2e)', () => {
         const submitRes = await request(app.getHttpServer())
           .post('/api/approvals/submit')
           .set(auth(adminToken))
-          .send({ businessType: 'paper', businessId: paperId, title: '驳回测试' });
+          .send({
+            businessType: 'paper',
+            businessId: paperId,
+            title: '驳回测试',
+          });
         instanceId = submitRes.body.id;
 
         const rejectRes = await request(app.getHttpServer())
@@ -340,7 +387,11 @@ describe('New Modules (e2e)', () => {
         const submitRes = await request(app.getHttpServer())
           .post('/api/approvals/submit')
           .set(auth(adminToken))
-          .send({ businessType: 'paper', businessId: paperId, title: '撤销测试' });
+          .send({
+            businessType: 'paper',
+            businessId: paperId,
+            title: '撤销测试',
+          });
         instanceId = submitRes.body.id;
 
         const cancelRes = await request(app.getHttpServer())
@@ -361,7 +412,11 @@ describe('New Modules (e2e)', () => {
         const submitRes = await request(app.getHttpServer())
           .post('/api/approvals/submit')
           .set(auth(adminToken))
-          .send({ businessType: 'paper', businessId: pid, title: '撤销越权测试' });
+          .send({
+            businessType: 'paper',
+            businessId: pid,
+            title: '撤销越权测试',
+          });
         const iid = submitRes.body.id;
 
         // leader 不是提交人
@@ -414,7 +469,12 @@ describe('New Modules (e2e)', () => {
       const permRes = await request(app.getHttpServer())
         .post('/api/rbac/permissions')
         .set(auth(adminToken))
-        .send({ code: permCode, name: '测试权限', module: 'test', action: 'perm' });
+        .send({
+          code: permCode,
+          name: '测试权限',
+          module: 'test',
+          action: 'perm',
+        });
       expect(permRes.status).toBe(201);
       created.permissionCodes.push(permCode);
 
@@ -426,7 +486,9 @@ describe('New Modules (e2e)', () => {
 
       // 校验角色拥有该权限
       const checkRes = await request(app.getHttpServer())
-        .get(`/api/rbac/check-permission?roleCode=${roleCode}&permissionCode=${permCode}`)
+        .get(
+          `/api/rbac/check-permission?roleCode=${roleCode}&permissionCode=${permCode}`,
+        )
         .set(auth(adminToken));
       expect(checkRes.status).toBe(200);
       expect(checkRes.body.allowed).toBe(true);
@@ -436,12 +498,18 @@ describe('New Modules (e2e)', () => {
         .get(`/api/rbac/roles/${roleCode}/permissions`)
         .set(auth(adminToken));
       expect(listRes.status).toBe(200);
-      expect((listRes.body as Array<{ code: string }>).some((p) => p.code === permCode)).toBe(true);
+      expect(
+        (listRes.body as Array<{ code: string }>).some(
+          (p) => p.code === permCode,
+        ),
+      ).toBe(true);
     });
 
     it('check-permission 对未授权权限返回 false', async () => {
       const res = await request(app.getHttpServer())
-        .get(`/api/rbac/check-permission?roleCode=${roleCode}&permissionCode=nonexistent:perm`)
+        .get(
+          `/api/rbac/check-permission?roleCode=${roleCode}&permissionCode=nonexistent:perm`,
+        )
         .set(auth(adminToken));
       expect(res.status).toBe(200);
       expect(res.body.allowed).toBe(false);
@@ -492,14 +560,20 @@ describe('New Modules (e2e)', () => {
 
       // 查询授权列表
       const listRes = await request(app.getHttpServer())
-        .get(`/api/secret-access/grants?businessType=paper&businessId=${businessId}`)
+        .get(
+          `/api/secret-access/grants?businessType=paper&businessId=${businessId}`,
+        )
         .set(auth(secretToken));
       expect(listRes.status).toBe(200);
-      expect((listRes.body as Array<{ id: number }>).some((g) => g.id === grantId)).toBe(true);
+      expect(
+        (listRes.body as Array<{ id: number }>).some((g) => g.id === grantId),
+      ).toBe(true);
 
       // 校验授权(manage 范围,任意 action 都通过)
       const checkRes = await request(app.getHttpServer())
-        .get(`/api/secret-access/check?businessType=paper&businessId=${businessId}&userId=${adminId}&action=download`)
+        .get(
+          `/api/secret-access/check?businessType=paper&businessId=${businessId}&userId=${adminId}&action=download`,
+        )
         .set(auth(secretToken));
       expect(checkRes.status).toBe(200);
       expect(checkRes.body.allowed).toBe(true);
@@ -513,7 +587,9 @@ describe('New Modules (e2e)', () => {
 
       // 撤销后校验返回 false
       const checkAfter = await request(app.getHttpServer())
-        .get(`/api/secret-access/check?businessType=paper&businessId=${businessId}&userId=${adminId}&action=download`)
+        .get(
+          `/api/secret-access/check?businessType=paper&businessId=${businessId}&userId=${adminId}&action=download`,
+        )
         .set(auth(secretToken));
       expect(checkAfter.body.allowed).toBe(false);
     });
@@ -619,7 +695,12 @@ describe('New Modules (e2e)', () => {
       const createRes = await request(app.getHttpServer())
         .post('/api/reports/scheduled-tasks')
         .set(auth(adminToken))
-        .send({ templateId, taskName: '每月论文报表', cronExpr: '0 0 1 * *', channel: 'site' });
+        .send({
+          templateId,
+          taskName: '每月论文报表',
+          cronExpr: '0 0 1 * *',
+          channel: 'site',
+        });
       expect(createRes.status).toBe(201);
       const taskId = createRes.body.id;
 
@@ -627,7 +708,9 @@ describe('New Modules (e2e)', () => {
         .get('/api/reports/scheduled-tasks')
         .set(auth(adminToken));
       expect(listRes.status).toBe(200);
-      expect((listRes.body as Array<{ id: number }>).some((t) => t.id === taskId)).toBe(true);
+      expect(
+        (listRes.body as Array<{ id: number }>).some((t) => t.id === taskId),
+      ).toBe(true);
 
       const delRes = await request(app.getHttpServer())
         .delete(`/api/reports/scheduled-tasks/${taskId}`)

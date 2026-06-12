@@ -30,5 +30,11 @@ export async function paginate<T extends ObjectLiteral>(
     .skip((p - 1) * ps)
     .take(ps)
     .getManyAndCount();
-  return { items, total, page: p, pageSize: ps, totalPages: Math.ceil(total / ps) };
+  return {
+    items,
+    total,
+    page: p,
+    pageSize: ps,
+    totalPages: Math.ceil(total / ps),
+  };
 }

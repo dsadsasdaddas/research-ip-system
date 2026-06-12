@@ -53,7 +53,10 @@ export class ApprovalsController {
   @Patch('flows/:id')
   @UseGuards(RolesGuard)
   @Roles('sys_admin')
-  updateFlow(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateFlowDto) {
+  updateFlow(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateFlowDto,
+  ) {
     return this.svc.updateFlow(id, dto);
   }
 
@@ -69,14 +72,20 @@ export class ApprovalsController {
   @Post('flows/:flowId/nodes')
   @UseGuards(RolesGuard)
   @Roles('sys_admin')
-  addNode(@Param('flowId', ParseIntPipe) flowId: number, @Body() dto: CreateNodeDto) {
+  addNode(
+    @Param('flowId', ParseIntPipe) flowId: number,
+    @Body() dto: CreateNodeDto,
+  ) {
     return this.svc.addNode(flowId, dto);
   }
 
   @Patch('nodes/:id')
   @UseGuards(RolesGuard)
   @Roles('sys_admin')
-  updateNode(@Param('id', ParseIntPipe) id: number, @Body() dto: Partial<CreateNodeDto>) {
+  updateNode(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: Partial<CreateNodeDto>,
+  ) {
     return this.svc.updateNode(id, dto);
   }
 
@@ -90,7 +99,10 @@ export class ApprovalsController {
   // ==================== 审批实例操作 ====================
 
   @Post('submit')
-  submitForApproval(@Body() dto: SubmitApprovalDto, @CurrentUser() user: AuthUser) {
+  submitForApproval(
+    @Body() dto: SubmitApprovalDto,
+    @CurrentUser() user: AuthUser,
+  ) {
     return this.svc.submitForApproval(dto, user);
   }
 

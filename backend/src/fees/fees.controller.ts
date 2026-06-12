@@ -1,6 +1,14 @@
 import {
-  Controller, Get, Post, Patch, Delete,
-  Param, Body, Query, UseGuards, ParseIntPipe,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { FeesService, FeeListQuery, PatentForPlan } from './fees.service';
 import { CreateFeeDto } from './dto/create-fee.dto';
@@ -36,14 +44,20 @@ export class FeesController {
 
   @Get()
   findAll(
-    @Query('keyword')      keyword?: string,
+    @Query('keyword') keyword?: string,
     @Query('relationType') relationType?: string,
-    @Query('payStatus')    payStatus?: string,
-    @Query('alertLevel')   alertLevel?: string,
-    @CurrentUser()         user?: AuthUser,
+    @Query('payStatus') payStatus?: string,
+    @Query('alertLevel') alertLevel?: string,
+    @CurrentUser() user?: AuthUser,
   ) {
     const deptId = user ? getDeptFilter(user) : undefined;
-    const query: FeeListQuery = { keyword, relationType, payStatus, alertLevel, deptId };
+    const query: FeeListQuery = {
+      keyword,
+      relationType,
+      payStatus,
+      alertLevel,
+      deptId,
+    };
     return this.svc.findAll(query);
   }
 
@@ -56,7 +70,10 @@ export class FeesController {
   @Post('generate-plans')
   @UseGuards(RolesGuard)
   @Roles('dept_admin', 'sys_admin', 'dept_secretary')
-  generatePlans(@Body('patents') patents: PatentForPlan[], @CurrentUser() user: AuthUser) {
+  generatePlans(
+    @Body('patents') patents: PatentForPlan[],
+    @CurrentUser() user: AuthUser,
+  ) {
     return this.svc.generatePlansFromPatents(patents ?? [], user);
   }
 
@@ -68,7 +85,10 @@ export class FeesController {
   }
 
   @Post(':feeId/plans')
-  createPlan(@Param('feeId', ParseIntPipe) feeId: number, @Body() dto: CreateFeePlanDto) {
+  createPlan(
+    @Param('feeId', ParseIntPipe) feeId: number,
+    @Body() dto: CreateFeePlanDto,
+  ) {
     return this.plansSvc.create({ ...dto, feeId });
   }
 
@@ -80,7 +100,10 @@ export class FeesController {
   }
 
   @Post(':feeId/payments')
-  createPayment(@Param('feeId', ParseIntPipe) feeId: number, @Body() dto: CreateFeePaymentDto) {
+  createPayment(
+    @Param('feeId', ParseIntPipe) feeId: number,
+    @Body() dto: CreateFeePaymentDto,
+  ) {
     return this.paymentsSvc.create(feeId, dto);
   }
 
@@ -130,12 +153,18 @@ export class FeePaymentsController {
   ) {}
 
   @Patch(':id/finance-status')
-  updateFinanceStatus(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateFinanceStatusDto) {
+  updateFinanceStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateFinanceStatusDto,
+  ) {
     return this.paymentsSvc.updateFinanceStatus(id, dto);
   }
 
   @Post(':paymentId/vouchers')
-  createVoucher(@Param('paymentId', ParseIntPipe) paymentId: number, @Body() dto: CreateFeeVoucherDto) {
+  createVoucher(
+    @Param('paymentId', ParseIntPipe) paymentId: number,
+    @Body() dto: CreateFeeVoucherDto,
+  ) {
     return this.vouchersSvc.create({ ...dto, paymentRecordId: paymentId });
   }
 }

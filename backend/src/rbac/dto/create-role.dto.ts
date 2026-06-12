@@ -7,12 +7,15 @@ export class CreateRoleDto {
   @IsString()
   name!: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   dataScope?: string;
 
-  @IsOptional() @IsBoolean()
+  @IsOptional()
+  @IsBoolean()
   isActive?: boolean;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   remark?: string | null;
 }

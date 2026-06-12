@@ -179,8 +179,8 @@ JWT_SECRET=research-mis-secret-2024
 ## 确定接口清单
 
 - 详细接口协议固定记录在 `docs/API_PROTOCOL.md`。
-- 当前确定接口包括：`auth/login`、成果登记 CRUD（papers/patents/copyrights/transforms）、`papers/doi-lookup`、Rust 搜索 `/api/search`、费用 `/api/fees`、提醒 `/api/reminders`、附件 `/api/attachments`、统计 `/api/stats`、审计日志 `/api/audit-logs`、用户管理 `/api/users`、部门管理 `/api/departments`、数据字典 `/api/dictionaries`、外部接口配置中心 `/api/integrations`（前端路由 `/integrations`）。
-- 尚未实现的审批、报表导出、备份恢复、涉密授权、检索日志接口，必须实现时再补充协议，不要临时随意命名。
+- 当前确定接口包括：`auth/login`、成果登记 CRUD（papers/patents/copyrights/transforms）、`papers/doi-lookup`、Rust 搜索 `/api/search`、费用 `/api/fees`、提醒 `/api/reminders`、附件 `/api/attachments`、统计 `/api/stats`、审计日志 `/api/audit-logs`、用户管理 `/api/users`、部门管理 `/api/departments`、数据字典 `/api/dictionaries`、外部接口配置中心 `/api/integrations`（前端路由 `/integrations`）、**审批 `/api/approvals`、检索日志 `/api/search-logs`、报表 `/api/reports`、备份 `/api/backup`、涉密授权 `/api/secret-access`、RBAC `/api/rbac`、通知 `/api/notifications`**（以上均已实现，协议详见 `docs/API_PROTOCOL.md` §8.14–§8.20）。
+- 仍未实现、待后续补协议的：移动端接口、报表 PDF 真实导出、`audit_log` 字段级变更日志（当前为 HTTP 请求级，需补 `operate_type/table_name/record_id/old_value/new_value`，对齐说明书 §6.2）。
 
 ## 需求落地原则（必须遵守）
 

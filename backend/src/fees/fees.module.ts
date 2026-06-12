@@ -9,11 +9,23 @@ import { FeePlansService } from './fee-plans.service';
 import { FeePaymentsService } from './fee-payments.service';
 import { FeeVouchersService } from './fee-vouchers.service';
 import { FeeScheduleService } from './fee-schedule.service';
-import { FeesController, FeePlansController, FeePaymentsController } from './fees.controller';
+import {
+  FeesController,
+  FeePlansController,
+  FeePaymentsController,
+} from './fees.controller';
 import { Patent } from '../patents/entities/patent.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Fee, FeePlan, FeePaymentRecord, FeeVoucher, Patent])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Fee,
+      FeePlan,
+      FeePaymentRecord,
+      FeeVoucher,
+      Patent,
+    ]),
+  ],
   providers: [
     FeesService,
     FeePlansService,
@@ -22,6 +34,11 @@ import { Patent } from '../patents/entities/patent.entity';
     FeeScheduleService,
   ],
   controllers: [FeesController, FeePlansController, FeePaymentsController],
-  exports: [FeesService, FeePlansService, FeePaymentsService, FeeVouchersService],
+  exports: [
+    FeesService,
+    FeePlansService,
+    FeePaymentsService,
+    FeeVouchersService,
+  ],
 })
 export class FeesModule {}

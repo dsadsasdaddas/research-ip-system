@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { CreatePaperDto } from './dto/create-paper.dto';
@@ -17,6 +18,9 @@ import { PapersService } from './papers.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/types/auth-user.interface';
+import type { Response } from 'express';
+import { ExportResourceDto } from '../common/dto/export-resource.dto';
+import { sendExportFile } from '../common/utils/export-file';
 
 /**
  * 论文 REST 接口(全局前缀 /api 见 main.ts,故实际路径如下):
@@ -36,9 +40,48 @@ export class PapersController {
     return this.papersService.create(dto, user);
   }
 
+  /**
+   * 导出当前(可按 keyword 过滤的)论文列表为 xlsx/csv,直接回传文件流下载。
+   * POST /api/papers/export { format, keyword, columns }
+   */
+  @Post('export')
+  async exportResource(
+    @Body() dto: ExportResourceDto,
+    @CurrentUser() user: AuthUser,
+    @Res() res: Response,
+  ) {
+    const rows = await this.papersService.exportResource(
+      { keyword: dto.keyword },
+      user,
+    );
+    const columns = (dto.columns ?? []).map((c) => ({
+      key: c.key,
+      header: c.header,
+    }));
+    const today = new Date().toISOString().slice(0, 10);
+    await sendExportFile(res, {
+      filename: `papers_${today}.${dto.format || 'xlsx'}`,
+      format: dto.format || 'xlsx',
+      columns,
+      rows,
+    });
+  }
+
   @Get()
-  findAll(@Query('keyword') keyword?: string, @CurrentUser() user?: AuthUser) {
-    return this.papersService.findAll(keyword, user);
+  findAll(
+    @Query('keyword') keyword?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @CurrentUser() user?: AuthUser,
+  ) {
+    return this.papersService.findAll(
+      {
+        keyword,
+        page: page ? Number(page) : undefined,
+        pageSize: pageSize ? Number(pageSize) : undefined,
+      },
+      user,
+    );
   }
 
   /**
@@ -53,12 +96,19 @@ export class PapersController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthUser,
+  ) {
     return this.papersService.findOne(id, user);
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePaperDto, @CurrentUser() user: AuthUser) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdatePaperDto,
+    @CurrentUser() user: AuthUser,
+  ) {
     return this.papersService.update(id, dto, user);
   }
 

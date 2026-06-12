@@ -1,4 +1,10 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 /** RBAC权限表 */
 @Entity('rbac_permission')
@@ -15,10 +21,19 @@ export class RbacPermission {
   @Column({ type: 'varchar', length: 100, comment: '所属模块' })
   module!: string;
 
-  @Column({ type: 'varchar', length: 50, comment: '动作: read/create/update/delete/export/approve' })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    comment: '动作: read/create/update/delete/export/approve',
+  })
   action!: string;
 
-  @Column({ type: 'boolean', name: 'is_active', default: true, comment: '是否启用' })
+  @Column({
+    type: 'boolean',
+    name: 'is_active',
+    default: true,
+    comment: '是否启用',
+  })
   isActive!: boolean;
 
   @Column({ type: 'varchar', length: 255, nullable: true, comment: '备注' })

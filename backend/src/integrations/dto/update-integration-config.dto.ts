@@ -1,28 +1,49 @@
-import { IsBoolean, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdateIntegrationConfigDto {
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   name?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   baseUrl?: string | null;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   apiKeyEnv?: string | null;
 
-  @IsOptional() @IsBoolean()
+  @IsOptional()
+  @IsBoolean()
   isEnabled?: boolean;
 
-  @IsOptional() @Type(() => Number) @IsNumber() @Min(1000) @Max(60000)
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1000)
+  @Max(60000)
   timeoutMs?: number;
 
-  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(5)
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(5)
   retryCount?: number;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   fallbackMode?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   extra?: string | null;
 }

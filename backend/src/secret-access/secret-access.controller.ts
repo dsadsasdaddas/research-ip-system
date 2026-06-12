@@ -1,4 +1,16 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { SecretAccessService } from './secret-access.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -33,7 +45,10 @@ export class SecretAccessController {
     @Query('businessType') businessType?: string,
     @Query('businessId') businessId?: string,
   ) {
-    return this.svc.findGrants(businessType, businessId ? +businessId : undefined);
+    return this.svc.findGrants(
+      businessType,
+      businessId ? +businessId : undefined,
+    );
   }
 
   @Get('check')
@@ -45,7 +60,9 @@ export class SecretAccessController {
   ) {
     // 参数缺失时 TypeORM 会忽略该条件 → 跨业务类型匹配越权,必须先校验
     if (!businessType || !businessId || !userId || !action) {
-      throw new BadRequestException('businessType、businessId、userId、action 不能为空');
+      throw new BadRequestException(
+        'businessType、businessId、userId、action 不能为空',
+      );
     }
     const bId = Number(businessId);
     const uId = Number(userId);

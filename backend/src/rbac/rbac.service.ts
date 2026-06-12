@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RbacRole } from './entities/rbac-role.entity';
@@ -12,8 +16,10 @@ import { CreatePermissionDto } from './dto/create-permission.dto';
 export class RbacService {
   constructor(
     @InjectRepository(RbacRole) private roleRepo: Repository<RbacRole>,
-    @InjectRepository(RbacPermission) private permRepo: Repository<RbacPermission>,
-    @InjectRepository(RbacRolePermission) private rpRepo: Repository<RbacRolePermission>,
+    @InjectRepository(RbacPermission)
+    private permRepo: Repository<RbacPermission>,
+    @InjectRepository(RbacRolePermission)
+    private rpRepo: Repository<RbacRolePermission>,
   ) {}
 
   // ──── 角色 CRUD ────
@@ -58,7 +64,10 @@ export class RbacService {
   // ──── 角色权限分配 ────
 
   /** 分配权限给角色：先删除旧关联，再批量插入 */
-  async assignPermissions(roleCode: string, permissionCodes: string[]): Promise<void> {
+  async assignPermissions(
+    roleCode: string,
+    permissionCodes: string[],
+  ): Promise<void> {
     await this.rpRepo.delete({ roleCode });
     if (permissionCodes.length > 0) {
       const entities = permissionCodes.map((pc) =>
@@ -82,7 +91,10 @@ export class RbacService {
   }
 
   /** 检查角色是否拥有指定权限 */
-  async checkPermission(roleCode: string, permissionCode: string): Promise<boolean> {
+  async checkPermission(
+    roleCode: string,
+    permissionCode: string,
+  ): Promise<boolean> {
     const count = await this.rpRepo.count({
       where: { roleCode, permissionCode },
     });

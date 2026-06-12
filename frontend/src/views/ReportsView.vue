@@ -15,7 +15,15 @@ const templates = ref([])
 const templateTotal = ref(0)
 const templateFilter = reactive({ page: 1, pageSize: 20 })
 
-const REPORT_TYPES = ['成果汇总', '费用统计', '部门统计', '年度趋势']
+// 报表类型:前端用中文 label,但 value 必须是后端 getTableName 能识别的英文键
+// (paper/patent/fee/transform),否则导出时查不到表、数据为空。
+const REPORT_TYPES = [
+  { label: '论文', value: 'paper' },
+  { label: '专利', value: 'patent' },
+  { label: '费用', value: 'fee' },
+  { label: '转化', value: 'transform' },
+]
+const REPORT_TYPE_LABEL = Object.fromEntries(REPORT_TYPES.map((t) => [t.value, t.label]))
 
 async function loadTemplates() {
   loading.value = true
@@ -33,17 +41,17 @@ const isEditTpl = ref(false)
 const savingTpl = ref(false)
 const tplFormRef = ref(null)
 const tplForm = reactive({
+  code: '',
   name: '',
   reportType: '',
   scope: 'all',
-  description: '',
 })
 let editTplId = null
 
 function openAddTpl() {
   isEditTpl.value = false
   editTplId = null
-  Object.assign(tplForm, { name: '', reportType: '', scope: 'all', description: '' })
+  Object.assign(tplForm, { code: '', name: '', reportType: '', scope: 'all' })
   tplDialog.value = true
 }
 
@@ -51,10 +59,10 @@ function openEditTpl(row) {
   isEditTpl.value = true
   editTplId = row.id
   Object.assign(tplForm, {
+    code: row.code || '',
     name: row.name,
     reportType: row.reportType || '',
     scope: row.scope || 'all',
-    description: row.description || '',
   })
   tplDialog.value = true
 }
@@ -62,6 +70,7 @@ function openEditTpl(row) {
 async function saveTpl() {
   savingTpl.value = true
   try {
+    // code 为后端必填(唯一编码);name 必填;reportType 必须是英文键。
     if (isEditTpl.value) await reportsApi.updateTemplate(editTplId, { ...tplForm })
     else await reportsApi.createTemplate({ ...tplForm })
     tplDialog.value = false
@@ -96,9 +105,10 @@ const exportLogs = ref([])
 const exportTotal = ref(0)
 const exportFilter = reactive({ page: 1, pageSize: 20 })
 
+// 后端 report_export_log.status 取值为 pending/success/failed(非 completed)
 const EXPORT_STATUS_TAG = {
   pending: { label: '生成中', type: 'warning' },
-  completed: { label: '已完成', type: 'success' },
+  success: { label: '已完成', type: 'success' },
   failed: { label: '失败', type: 'danger' },
 }
 
@@ -112,8 +122,22 @@ async function loadExportLogs() {
   finally { loading.value = false }
 }
 
-function downloadFile(id) {
-  return `/api/reports/exports/${id}/download`
+// 下载:走 axios(带 JWT)拿 blob,再在浏览器侧触发保存。
+// 不能用 <a href>,因为浏览器导航请求不会带 Authorization 头(会 401)。
+async function handleDownload(row) {
+  try {
+    const blob = await reportsApi.downloadExport(row.id)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${row.reportType || 'report'}_${row.id}.${row.exportFormat || 'xlsx'}`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  } catch {
+    ElMessage.error('下载失败')
+  }
 }
 
 // ===== 定时报表 =====
@@ -212,15 +236,15 @@ onMounted(loadTemplates)
 
         <div class="table-wrap">
           <el-table :data="templates" v-loading="loading" border size="small" style="width:100%">
+            <el-table-column label="编码" prop="code" width="160" show-overflow-tooltip />
             <el-table-column label="模板名称" prop="name" min-width="180" show-overflow-tooltip />
-            <el-table-column label="报表类型" prop="reportType" width="120" align="center" />
+            <el-table-column label="报表类型" width="100" align="center">
+              <template #default="{ row }">{{ REPORT_TYPE_LABEL[row.reportType] || row.reportType }}</template>
+            </el-table-column>
             <el-table-column label="范围" width="100" align="center">
               <template #default="{ row }">
                 <el-tag size="small">{{ row.scope === 'all' ? '全部' : row.scope }}</el-tag>
               </template>
-            </el-table-column>
-            <el-table-column label="描述" prop="description" min-width="160" show-overflow-tooltip>
-              <template #default="{ row }">{{ row.description || '—' }}</template>
             </el-table-column>
             <el-table-column label="操作" width="200" align="center" fixed="right">
               <template #default="{ row }">
@@ -246,10 +270,12 @@ onMounted(loadTemplates)
       <el-tab-pane label="导出历史" name="exports">
         <div class="table-wrap">
           <el-table :data="exportLogs" v-loading="loading" border size="small" style="width:100%">
-            <el-table-column label="模板" prop="templateName" min-width="160" show-overflow-tooltip />
-            <el-table-column label="格式" prop="format" width="80" align="center">
+            <el-table-column label="报表类型" width="110" align="center">
+              <template #default="{ row }">{{ REPORT_TYPE_LABEL[row.reportType] || row.reportType }}</template>
+            </el-table-column>
+            <el-table-column label="格式" width="80" align="center">
               <template #default="{ row }">
-                <el-tag size="small" type="info">{{ (row.format || '').toUpperCase() }}</el-tag>
+                <el-tag size="small" type="info">{{ (row.exportFormat || '').toUpperCase() }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column label="状态" width="100" align="center">
@@ -262,12 +288,12 @@ onMounted(loadTemplates)
             <el-table-column label="生成时间" width="160" align="center">
               <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
             </el-table-column>
-            <el-table-column label="操作人" prop="operatorName" width="100" align="center" />
+            <el-table-column label="操作人" prop="username" width="100" align="center" />
             <el-table-column label="操作" width="100" align="center" fixed="right">
               <template #default="{ row }">
-                <a v-if="row.status === 'completed'" :href="downloadFile(row.id)" target="_blank">
-                  <el-button link size="small" type="primary">下载</el-button>
-                </a>
+                <el-button v-if="row.status === 'success'" link size="small" type="primary" @click="handleDownload(row)">
+                  下载
+                </el-button>
                 <span v-else style="color: var(--text-secondary); font-size: 12px">—</span>
               </template>
             </el-table-column>
@@ -318,14 +344,21 @@ onMounted(loadTemplates)
       destroy-on-close
     >
       <el-form :model="tplForm" ref="tplFormRef" label-width="90px"
-        :rules="{ name: [{ required: true, message: '请填写模板名称' }] }"
+        :rules="{
+          code: [{ required: true, message: '请填写模板编码' }],
+          name: [{ required: true, message: '请填写模板名称' }],
+          reportType: [{ required: true, message: '请选择报表类型' }],
+        }"
       >
+        <el-form-item label="模板编码" prop="code">
+          <el-input v-model="tplForm.code" placeholder="如 PAPER_LIST(唯一,英文/数字/下划线)" />
+        </el-form-item>
         <el-form-item label="模板名称" prop="name">
           <el-input v-model="tplForm.name" placeholder="输入模板名称" />
         </el-form-item>
-        <el-form-item label="报表类型">
+        <el-form-item label="报表类型" prop="reportType">
           <el-select v-model="tplForm.reportType" placeholder="选择报表类型" clearable style="width:100%">
-            <el-option v-for="t in REPORT_TYPES" :key="t" :label="t" :value="t" />
+            <el-option v-for="t in REPORT_TYPES" :key="t.value" :label="t.label" :value="t.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="范围">
@@ -333,9 +366,6 @@ onMounted(loadTemplates)
             <el-option label="全部" value="all" />
             <el-option label="本部门" value="dept" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="tplForm.description" type="textarea" :rows="3" placeholder="模板说明" />
         </el-form-item>
       </el-form>
       <template #footer>

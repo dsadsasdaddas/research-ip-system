@@ -8,9 +8,7 @@ import { Fee } from './entities/fee.entity';
 export class FeeScheduleService {
   private readonly logger = new Logger(FeeScheduleService.name);
 
-  constructor(
-    @InjectRepository(Fee) private feeRepo: Repository<Fee>,
-  ) {}
+  constructor(@InjectRepository(Fee) private feeRepo: Repository<Fee>) {}
 
   /** 每天早上 8 点检测逾期费用 */
   @Cron('0 8 * * *')
@@ -25,7 +23,9 @@ export class FeeScheduleService {
       .execute();
 
     if (result.affected && result.affected > 0) {
-      this.logger.log(`已将 ${result.affected} 条费用标记为逾期 (due_date < ${today})`);
+      this.logger.log(
+        `已将 ${result.affected} 条费用标记为逾期 (due_date < ${today})`,
+      );
     }
   }
 }

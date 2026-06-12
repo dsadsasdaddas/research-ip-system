@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, In } from 'typeorm';
 import { ApprovalFlow } from './entities/approval-flow.entity';
@@ -16,9 +21,12 @@ import type { AuthUser } from '../auth/types/auth-user.interface';
 export class ApprovalsService {
   constructor(
     @InjectRepository(ApprovalFlow) private flowRepo: Repository<ApprovalFlow>,
-    @InjectRepository(ApprovalFlowNode) private nodeRepo: Repository<ApprovalFlowNode>,
-    @InjectRepository(ApprovalInstance) private instanceRepo: Repository<ApprovalInstance>,
-    @InjectRepository(ApprovalRecord) private recordRepo: Repository<ApprovalRecord>,
+    @InjectRepository(ApprovalFlowNode)
+    private nodeRepo: Repository<ApprovalFlowNode>,
+    @InjectRepository(ApprovalInstance)
+    private instanceRepo: Repository<ApprovalInstance>,
+    @InjectRepository(ApprovalRecord)
+    private recordRepo: Repository<ApprovalRecord>,
     private dataSource: DataSource,
   ) {}
 
@@ -30,7 +38,10 @@ export class ApprovalsService {
   }
 
   /** 更新审批流程定义 */
-  async updateFlow(id: number, dto: UpdateFlowDto): Promise<ApprovalFlow | null> {
+  async updateFlow(
+    id: number,
+    dto: UpdateFlowDto,
+  ): Promise<ApprovalFlow | null> {
     await this.flowRepo.update(id, dto);
     return this.flowRepo.findOneBy({ id });
   }
@@ -73,7 +84,10 @@ export class ApprovalsService {
   }
 
   /** 更新流程节点 */
-  async updateNode(id: number, dto: Partial<CreateNodeDto>): Promise<ApprovalFlowNode | null> {
+  async updateNode(
+    id: number,
+    dto: Partial<CreateNodeDto>,
+  ): Promise<ApprovalFlowNode | null> {
     await this.nodeRepo.update(id, dto);
     return this.nodeRepo.findOneBy({ id });
   }
@@ -90,20 +104,31 @@ export class ApprovalsService {
    * 提交审批 —— 查找匹配的流程,创建实例,生成提交记录
    * 同时更新业务表的 approval_status = 'submitted'
    */
-  async submitForApproval(dto: SubmitApprovalDto, user: AuthUser): Promise<ApprovalInstance> {
-    // 1. 查找匹配的审批流程(按 businessType, 优先匹配 secretLevel)
-    const qb = this.flowRepo.createQueryBuilder('f')
+  async submitForApproval(
+    dto: SubmitApprovalDto,
+    user: AuthUser,
+  ): Promise<ApprovalInstance> {
+    // 1. 查找匹配的审批流程(按 businessType + 启用)。orderBy id 保证选择确定性,
+    //    否则同一 businessType 配多个流程时,DB 行序不稳定会导致路由漂移。
+    const qb = this.flowRepo
+      .createQueryBuilder('f')
       .where('f.business_type = :bt', { bt: dto.businessType })
-      .andWhere('f.is_active = :active', { active: true });
+      .andWhere('f.is_active = :active', { active: true })
+      .orderBy('f.id', 'ASC');
 
     const flows = await qb.getMany();
     if (flows.length === 0) {
-      throw new BadRequestException(`未找到业务类型 [${dto.businessType}] 对应的审批流程`);
+      throw new BadRequestException(
+        `未找到业务类型 [${dto.businessType}] 对应的审批流程`,
+      );
     }
 
-    // 优先选择精确匹配 secretLevel 的流程,否则选通用的(secretLevel IS NULL)
-    let flow = flows.find(f => f.secretLevel != null) ?? flows.find(f => f.secretLevel == null);
-    if (!flow) flow = flows[0];
+    // 优先选择带密级标记的具体流程(secretLevel != null),否则退到通用流程(== null)。
+    // 注意:此处只按"流程自身是否带密级"二分,并不比对提交项的实际密级(SubmitApprovalDto 不带 secretLevel);
+    // 多个非空 secretLevel 流程并存时,取 id 最小者(由上方 orderBy 保证稳定)。
+    // flows 已保证非空(上方 length===0 已抛错),且每个元素必命中 !=null 或 ==null 之一,故结果非空。
+    const flow = (flows.find((f) => f.secretLevel != null) ??
+      flows.find((f) => f.secretLevel == null))!;
 
     // 2. 获取流程的节点列表(按 nodeOrder 排序)
     const nodes = await this.nodeRepo.find({
@@ -132,18 +157,24 @@ export class ApprovalsService {
     const saved = await this.instanceRepo.save(instance);
 
     // 4. 创建提交记录
-    await this.recordRepo.save(this.recordRepo.create({
-      instanceId: saved.id,
-      nodeId: firstNode.id,
-      action: 'submit',
-      opinion: dto.remark ?? null,
-      operatorId: user.id,
-      operatorName: user.realName ?? user.username,
-      nextNodeId: firstNode.id,
-    }));
+    await this.recordRepo.save(
+      this.recordRepo.create({
+        instanceId: saved.id,
+        nodeId: firstNode.id,
+        action: 'submit',
+        opinion: dto.remark ?? null,
+        operatorId: user.id,
+        operatorName: user.realName ?? user.username,
+        nextNodeId: firstNode.id,
+      }),
+    );
 
     // 5. 更新业务表的审批状态
-    await this.updateBusinessStatus(dto.businessType, dto.businessId, 'submitted');
+    await this.updateBusinessStatus(
+      dto.businessType,
+      dto.businessId,
+      'submitted',
+    );
 
     return saved;
   }
@@ -151,10 +182,16 @@ export class ApprovalsService {
   /**
    * 审批通过 —— 验证审批人身份,记录操作,推进到下一节点或完成
    */
-  async approve(instanceId: number, nodeId: number, dto: ApproveActionDto, user: AuthUser): Promise<ApprovalInstance> {
+  async approve(
+    instanceId: number,
+    nodeId: number,
+    dto: ApproveActionDto,
+    user: AuthUser,
+  ): Promise<ApprovalInstance> {
     const instance = await this.instanceRepo.findOneBy({ id: instanceId });
     if (!instance) throw new NotFoundException('审批实例不存在');
-    if (instance.status !== 'pending') throw new BadRequestException('当前实例不在待审批状态');
+    if (instance.status !== 'pending')
+      throw new BadRequestException('当前实例不在待审批状态');
 
     // 验证当前节点
     if (instance.currentNodeId !== nodeId) {
@@ -172,8 +209,9 @@ export class ApprovalsService {
       where: { flowId: instance.flowId },
       order: { nodeOrder: 'ASC' },
     });
-    const currentIndex = allNodes.findIndex(n => n.id === nodeId);
-    const nextNode = currentIndex < allNodes.length - 1 ? allNodes[currentIndex + 1] : null;
+    const currentIndex = allNodes.findIndex((n) => n.id === nodeId);
+    const nextNode =
+      currentIndex < allNodes.length - 1 ? allNodes[currentIndex + 1] : null;
 
     if (nextNode) {
       // 推进到下一节点
@@ -181,15 +219,17 @@ export class ApprovalsService {
         currentNodeId: nextNode.id,
       });
 
-      await this.recordRepo.save(this.recordRepo.create({
-        instanceId,
-        nodeId,
-        action: 'approve',
-        opinion: dto.opinion ?? null,
-        operatorId: user.id,
-        operatorName: user.realName ?? user.username,
-        nextNodeId: nextNode.id,
-      }));
+      await this.recordRepo.save(
+        this.recordRepo.create({
+          instanceId,
+          nodeId,
+          action: 'approve',
+          opinion: dto.opinion ?? null,
+          operatorId: user.id,
+          operatorName: user.realName ?? user.username,
+          nextNodeId: nextNode.id,
+        }),
+      );
     } else {
       // 全部节点通过,审批完成
       await this.instanceRepo.update(instanceId, {
@@ -198,30 +238,44 @@ export class ApprovalsService {
         finishTime: new Date(),
       });
 
-      await this.recordRepo.save(this.recordRepo.create({
-        instanceId,
-        nodeId,
-        action: 'approve',
-        opinion: dto.opinion ?? null,
-        operatorId: user.id,
-        operatorName: user.realName ?? user.username,
-        nextNodeId: null,
-      }));
+      await this.recordRepo.save(
+        this.recordRepo.create({
+          instanceId,
+          nodeId,
+          action: 'approve',
+          opinion: dto.opinion ?? null,
+          operatorId: user.id,
+          operatorName: user.realName ?? user.username,
+          nextNodeId: null,
+        }),
+      );
 
       // 更新业务表审批状态
-      await this.updateBusinessStatus(instance.businessType, instance.businessId, 'approved');
+      await this.updateBusinessStatus(
+        instance.businessType,
+        instance.businessId,
+        'approved',
+      );
     }
 
-    return this.instanceRepo.findOneBy({ id: instanceId }) as Promise<ApprovalInstance>;
+    return this.instanceRepo.findOneBy({
+      id: instanceId,
+    }) as Promise<ApprovalInstance>;
   }
 
   /**
    * 驳回 —— 整个审批被拒绝
    */
-  async reject(instanceId: number, nodeId: number, dto: ApproveActionDto, user: AuthUser): Promise<ApprovalInstance> {
+  async reject(
+    instanceId: number,
+    nodeId: number,
+    dto: ApproveActionDto,
+    user: AuthUser,
+  ): Promise<ApprovalInstance> {
     const instance = await this.instanceRepo.findOneBy({ id: instanceId });
     if (!instance) throw new NotFoundException('审批实例不存在');
-    if (instance.status !== 'pending') throw new BadRequestException('当前实例不在待审批状态');
+    if (instance.status !== 'pending')
+      throw new BadRequestException('当前实例不在待审批状态');
 
     const currentNode = await this.nodeRepo.findOneBy({ id: nodeId });
     if (!currentNode) throw new NotFoundException('审批节点不存在');
@@ -238,27 +292,41 @@ export class ApprovalsService {
       finishTime: new Date(),
     });
 
-    await this.recordRepo.save(this.recordRepo.create({
-      instanceId,
-      nodeId,
-      action: 'reject',
-      opinion: dto.opinion ?? null,
-      operatorId: user.id,
-      operatorName: user.realName ?? user.username,
-    }));
+    await this.recordRepo.save(
+      this.recordRepo.create({
+        instanceId,
+        nodeId,
+        action: 'reject',
+        opinion: dto.opinion ?? null,
+        operatorId: user.id,
+        operatorName: user.realName ?? user.username,
+      }),
+    );
 
-    await this.updateBusinessStatus(instance.businessType, instance.businessId, 'rejected');
+    await this.updateBusinessStatus(
+      instance.businessType,
+      instance.businessId,
+      'rejected',
+    );
 
-    return this.instanceRepo.findOneBy({ id: instanceId }) as Promise<ApprovalInstance>;
+    return this.instanceRepo.findOneBy({
+      id: instanceId,
+    }) as Promise<ApprovalInstance>;
   }
 
   /**
    * 退回上一节点
    */
-  async returnToPrevious(instanceId: number, nodeId: number, dto: ApproveActionDto, user: AuthUser): Promise<ApprovalInstance> {
+  async returnToPrevious(
+    instanceId: number,
+    nodeId: number,
+    dto: ApproveActionDto,
+    user: AuthUser,
+  ): Promise<ApprovalInstance> {
     const instance = await this.instanceRepo.findOneBy({ id: instanceId });
     if (!instance) throw new NotFoundException('审批实例不存在');
-    if (instance.status !== 'pending') throw new BadRequestException('当前实例不在待审批状态');
+    if (instance.status !== 'pending')
+      throw new BadRequestException('当前实例不在待审批状态');
 
     const currentNode = await this.nodeRepo.findOneBy({ id: nodeId });
     if (!currentNode) throw new NotFoundException('审批节点不存在');
@@ -270,7 +338,7 @@ export class ApprovalsService {
       where: { flowId: instance.flowId },
       order: { nodeOrder: 'ASC' },
     });
-    const currentIndex = allNodes.findIndex(n => n.id === nodeId);
+    const currentIndex = allNodes.findIndex((n) => n.id === nodeId);
     if (currentIndex <= 0) {
       throw new BadRequestException('已经是第一个节点,无法退回');
     }
@@ -281,17 +349,21 @@ export class ApprovalsService {
       currentNodeId: prevNode.id,
     });
 
-    await this.recordRepo.save(this.recordRepo.create({
-      instanceId,
-      nodeId,
-      action: 'return',
-      opinion: dto.opinion ?? null,
-      operatorId: user.id,
-      operatorName: user.realName ?? user.username,
-      nextNodeId: prevNode.id,
-    }));
+    await this.recordRepo.save(
+      this.recordRepo.create({
+        instanceId,
+        nodeId,
+        action: 'return',
+        opinion: dto.opinion ?? null,
+        operatorId: user.id,
+        operatorName: user.realName ?? user.username,
+        nextNodeId: prevNode.id,
+      }),
+    );
 
-    return this.instanceRepo.findOneBy({ id: instanceId }) as Promise<ApprovalInstance>;
+    return this.instanceRepo.findOneBy({
+      id: instanceId,
+    }) as Promise<ApprovalInstance>;
   }
 
   /**
@@ -314,16 +386,24 @@ export class ApprovalsService {
       finishTime: new Date(),
     });
 
-    await this.recordRepo.save(this.recordRepo.create({
-      instanceId,
-      action: 'cancel',
-      operatorId: user.id,
-      operatorName: user.realName ?? user.username,
-    }));
+    await this.recordRepo.save(
+      this.recordRepo.create({
+        instanceId,
+        action: 'cancel',
+        operatorId: user.id,
+        operatorName: user.realName ?? user.username,
+      }),
+    );
 
-    await this.updateBusinessStatus(instance.businessType, instance.businessId, 'cancelled');
+    await this.updateBusinessStatus(
+      instance.businessType,
+      instance.businessId,
+      'cancelled',
+    );
 
-    return this.instanceRepo.findOneBy({ id: instanceId }) as Promise<ApprovalInstance>;
+    return this.instanceRepo.findOneBy({
+      id: instanceId,
+    }) as Promise<ApprovalInstance>;
   }
 
   // ==================== 审批查询 ====================
@@ -332,12 +412,9 @@ export class ApprovalsService {
   async findMyPending(user: AuthUser): Promise<ApprovalInstance[]> {
     // 先找到匹配用户角色的节点
     const nodes = await this.nodeRepo.find({
-      where: [
-        { approverUserId: user.id },
-        { approverRole: user.role },
-      ],
+      where: [{ approverUserId: user.id }, { approverRole: user.role }],
     });
-    const nodeIds = nodes.map(n => n.id);
+    const nodeIds = nodes.map((n) => n.id);
     if (nodeIds.length === 0) return [];
 
     return this.instanceRepo.find({
@@ -358,7 +435,10 @@ export class ApprovalsService {
   }
 
   /** 按业务查询审批实例及全部审批记录 */
-  async findByBusiness(businessType: string, businessId: number): Promise<{
+  async findByBusiness(
+    businessType: string,
+    businessId: number,
+  ): Promise<{
     instance: ApprovalInstance | null;
     records: ApprovalRecord[];
   }> {
@@ -383,7 +463,8 @@ export class ApprovalsService {
     records: ApprovalRecord[];
   }> {
     const instance = await this.instanceRepo.findOneBy({ id: instanceId });
-    if (!instance) return { instance: null, flow: null, nodes: [], records: [] };
+    if (!instance)
+      return { instance: null, flow: null, nodes: [], records: [] };
 
     const flow = await this.flowRepo.findOneBy({ id: instance.flowId });
     const nodes = await this.nodeRepo.find({
@@ -401,10 +482,21 @@ export class ApprovalsService {
   // ==================== 私有方法 ====================
 
   /** 更新业务表的审批状态 */
-  private async updateBusinessStatus(businessType: string, businessId: number, status: string): Promise<void> {
+  private async updateBusinessStatus(
+    businessType: string,
+    businessId: number,
+    status: string,
+  ): Promise<void> {
     // 深度防御:businessType 拼入 SQL,即便入口 SubmitApprovalDto 已用 @IsIn 校验,
     // 此处仍做白名单兜底,防止未来新增调用点绕过校验。
-    const allowedTypes = ['paper', 'patent', 'copyright', 'transform', 'fee', 'secret'];
+    const allowedTypes = [
+      'paper',
+      'patent',
+      'copyright',
+      'transform',
+      'fee',
+      'secret',
+    ];
     if (!allowedTypes.includes(businessType)) {
       throw new BadRequestException(`非法的业务类型: ${businessType}`);
     }
@@ -418,8 +510,10 @@ export class ApprovalsService {
 
   /** 验证当前用户是否为该节点的审批人 */
   private verifyApprover(node: ApprovalFlowNode, user: AuthUser): void {
-    const matchByRole = node.approverRole != null && node.approverRole === user.role;
-    const matchByUser = node.approverUserId != null && node.approverUserId === user.id;
+    const matchByRole =
+      node.approverRole != null && node.approverRole === user.role;
+    const matchByUser =
+      node.approverUserId != null && node.approverUserId === user.id;
     if (!matchByRole && !matchByUser) {
       throw new ForbiddenException('您不是当前节点的审批人');
     }

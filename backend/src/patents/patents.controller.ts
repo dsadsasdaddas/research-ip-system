@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { CreatePatentDto } from './dto/create-patent.dto';
@@ -16,6 +17,9 @@ import { PatentsService } from './patents.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/types/auth-user.interface';
+import type { Response } from 'express';
+import { ExportResourceDto } from '../common/dto/export-resource.dto';
+import { sendExportFile } from '../common/utils/export-file';
 
 /**
  * 专利 REST 接口(全局前缀 /api,故实际路径):
@@ -35,18 +39,64 @@ export class PatentsController {
     return this.patentsService.create(dto, user);
   }
 
+  /**
+   * 导出当前(可按 keyword 过滤的)专利列表为 xlsx/csv,直接回传文件流下载。
+   * POST /api/patents/export { format, keyword, columns }
+   */
+  @Post('export')
+  async exportResource(
+    @Body() dto: ExportResourceDto,
+    @CurrentUser() user: AuthUser,
+    @Res() res: Response,
+  ) {
+    const rows = await this.patentsService.exportResource(
+      { keyword: dto.keyword },
+      user,
+    );
+    const columns = (dto.columns ?? []).map((c) => ({
+      key: c.key,
+      header: c.header,
+    }));
+    const today = new Date().toISOString().slice(0, 10);
+    await sendExportFile(res, {
+      filename: `patents_${today}.${dto.format || 'xlsx'}`,
+      format: dto.format || 'xlsx',
+      columns,
+      rows,
+    });
+  }
+
   @Get()
-  findAll(@Query('keyword') keyword?: string, @CurrentUser() user?: AuthUser) {
-    return this.patentsService.findAll(keyword, user);
+  findAll(
+    @Query('keyword') keyword?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @CurrentUser() user?: AuthUser,
+  ) {
+    return this.patentsService.findAll(
+      {
+        keyword,
+        page: page ? Number(page) : undefined,
+        pageSize: pageSize ? Number(pageSize) : undefined,
+      },
+      user,
+    );
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthUser,
+  ) {
     return this.patentsService.findOne(id, user);
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePatentDto, @CurrentUser() user: AuthUser) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdatePatentDto,
+    @CurrentUser() user: AuthUser,
+  ) {
     return this.patentsService.update(id, dto, user);
   }
 

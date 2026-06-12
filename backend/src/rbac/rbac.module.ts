@@ -7,7 +7,9 @@ import { RbacService } from './rbac.service';
 import { RbacController } from './rbac.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RbacRole, RbacPermission, RbacRolePermission])],
+  imports: [
+    TypeOrmModule.forFeature([RbacRole, RbacPermission, RbacRolePermission]),
+  ],
   providers: [RbacService],
   controllers: [RbacController],
   exports: [RbacService],

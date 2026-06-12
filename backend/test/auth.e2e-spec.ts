@@ -25,7 +25,10 @@ describe('Auth (e2e) — POST /api/auth/login', () => {
 
     expect(res.status).toBe(201);
     expect(typeof res.body.token).toBe('string');
-    expect(res.body.user).toMatchObject({ username: 'admin', role: 'sys_admin' });
+    expect(res.body.user).toMatchObject({
+      username: 'admin',
+      role: 'sys_admin',
+    });
     expect(res.body.user).not.toHaveProperty('password'); // 绝不泄露密码哈希
   });
 
@@ -55,6 +58,35 @@ describe('Auth (e2e) — POST /api/auth/login', () => {
     expect(res.status).toBe(401);
     // 与密码错误返回同样的文案,避免用户名枚举
     expect(res.body.message).toBe('用户名或密码错误');
+  });
+
+  // 缺字段由 LoginDto + ValidationPipe 校验,必须返回 400 而非把 undefined 透传到 service 触发 500
+  it('空请求体 {} → 400(LoginDto 校验)', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({});
+    expect(res.status).toBe(400);
+  });
+
+  it('缺密码 → 400', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({ username: 'admin' });
+    expect(res.status).toBe(400);
+  });
+
+  it('缺用户名 → 400', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({ password: 'Admin@123' });
+    expect(res.status).toBe(400);
+  });
+
+  it('字段类型错误(数字而非字符串)→ 400', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({ username: 123, password: true });
+    expect(res.status).toBe(400);
   });
 
   it('登录拿到的 token 能访问受保护接口 → 200', async () => {

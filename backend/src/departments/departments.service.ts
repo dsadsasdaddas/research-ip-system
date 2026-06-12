@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Like, Repository } from 'typeorm';
 import { CreateDepartmentDto } from './dto/create-department.dto';
@@ -7,7 +12,9 @@ import { Department } from './entities/department.entity';
 
 @Injectable()
 export class DepartmentsService {
-  constructor(@InjectRepository(Department) private readonly repo: Repository<Department>) {}
+  constructor(
+    @InjectRepository(Department) private readonly repo: Repository<Department>,
+  ) {}
 
   findAll(keyword?: string): Promise<Department[]> {
     return this.repo.find({
@@ -24,7 +31,8 @@ export class DepartmentsService {
 
   async create(dto: CreateDepartmentDto): Promise<Department> {
     await this.ensureNameAvailable(dto.name);
-    if (dto.parentId !== undefined && dto.parentId !== null) await this.findOne(dto.parentId);
+    if (dto.parentId !== undefined && dto.parentId !== null)
+      await this.findOne(dto.parentId);
     const dept = this.repo.create({
       name: dto.name,
       parentId: dto.parentId ?? null,
@@ -35,9 +43,11 @@ export class DepartmentsService {
 
   async update(id: number, dto: UpdateDepartmentDto): Promise<Department> {
     const dept = await this.findOne(id);
-    if (dto.name && dto.name !== dept.name) await this.ensureNameAvailable(dto.name);
+    if (dto.name && dto.name !== dept.name)
+      await this.ensureNameAvailable(dto.name);
     if (dto.parentId !== undefined && dto.parentId !== null) {
-      if (dto.parentId === id) throw new BadRequestException('上级部门不能是自己');
+      if (dto.parentId === id)
+        throw new BadRequestException('上级部门不能是自己');
       await this.findOne(dto.parentId);
     }
     Object.assign(dept, dto);

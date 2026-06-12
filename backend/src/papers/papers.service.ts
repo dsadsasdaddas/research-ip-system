@@ -1,6 +1,11 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, In, Like, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { CreatePaperDto } from './dto/create-paper.dto';
 import { UpdatePaperDto } from './dto/update-paper.dto';
 import { Paper } from './entities/paper.entity';
@@ -8,6 +13,8 @@ import type { AuthUser } from '../auth/types/auth-user.interface';
 import { getDeptFilter } from '../common/utils/dept-filter';
 import { getSecretLevels } from '../common/utils/secret-filter';
 import { escapeLike } from '../common/utils/escape-like';
+import { paginate, type PageResult } from '../common/utils/pagination';
+import type { BaseListQuery } from '../common/types/index';
 
 /**
  * 论文业务逻辑:真正读写数据库的地方。
@@ -23,11 +30,14 @@ export class PapersService {
   /** 新增论文（DOI 唯一性校验 + 归属字段从 user 注入） */
   async create(dto: CreatePaperDto, user: AuthUser) {
     if (dto.doi) {
-      const existing = await this.paperRepo.findOne({ where: { doi: dto.doi } });
+      const existing = await this.paperRepo.findOne({
+        where: { doi: dto.doi },
+      });
       if (existing) throw new ConflictException(`DOI "${dto.doi}" 已存在`);
     }
     const { deptId: _ignored, createUser: _ignored2, ...safeDto } = dto;
-    void _ignored; void _ignored2;
+    void _ignored;
+    void _ignored2;
     const paper = this.paperRepo.create({
       ...safeDto,
       deptId: user.deptId ?? null,
@@ -36,15 +46,36 @@ export class PapersService {
     return this.paperRepo.save(paper);
   }
 
-  /** 查询列表;传了 keyword 就按标题模糊搜；部门隔离角色只返回本部门数据；按密级过滤 */
-  findAll(keyword?: string, user?: AuthUser): Promise<Paper[]> {
+  /** 列表/导出共用的过滤条件(部门隔离 + 密级 + keyword 按标题) */
+  private listQuery(query: BaseListQuery, user?: AuthUser) {
     const deptId = user ? getDeptFilter(user) : undefined;
     const allowedLevels = user ? getSecretLevels(user) : ['公开'];
-    const where: FindOptionsWhere<Paper> = {};
-    if (deptId != null) where.deptId = deptId;
-    if (keyword) where.title = Like(`%${escapeLike(keyword)}%`);
-    where.secretLevel = In(allowedLevels);
-    return this.paperRepo.find({ where, order: { createTime: 'DESC' }, take: 500 });
+    const qb = this.paperRepo.createQueryBuilder('p');
+    if (deptId != null) qb.andWhere('p.deptId = :deptId', { deptId });
+    qb.andWhere('p.secretLevel IN (:...levels)', { levels: allowedLevels });
+    if (query.keyword)
+      qb.andWhere('p.title LIKE :kw', { kw: `%${escapeLike(query.keyword)}%` });
+    return qb;
+  }
+
+  /** 查询列表(分页);部门隔离角色只返回本部门;按密级过滤 */
+  findAll(query: BaseListQuery, user?: AuthUser): Promise<PageResult<Paper>> {
+    return paginate(
+      this.listQuery(query, user).orderBy('p.createTime', 'DESC'),
+      query.page,
+      query.pageSize,
+    );
+  }
+
+  /** 导出:与列表同样的过滤,但不分页、最多取 10000 行 */
+  async exportResource(
+    query: BaseListQuery,
+    user?: AuthUser,
+  ): Promise<Paper[]> {
+    return this.listQuery(query, user)
+      .orderBy('p.createTime', 'DESC')
+      .take(10000)
+      .getMany();
   }
 
   /** 查单条;不存在抛 404；检查密级权限 */
@@ -56,7 +87,10 @@ export class PapersService {
     if (user) {
       const allowedLevels = getSecretLevels(user);
       const deptId = getDeptFilter(user);
-      if (!allowedLevels.includes(paper.secretLevel ?? '公开') || (deptId != null && paper.deptId !== deptId)) {
+      if (
+        !allowedLevels.includes(paper.secretLevel ?? '公开') ||
+        (deptId != null && paper.deptId !== deptId)
+      ) {
         throw new NotFoundException(`论文 #${id} 不存在`);
       }
     }
@@ -66,7 +100,11 @@ export class PapersService {
   /** 更新 */
   async update(id: number, dto: UpdatePaperDto, user?: AuthUser) {
     const paper = await this.findOne(id, user); // 先确认存在并校验权限
-    const { deptId: ignoredDeptId, createUser: ignoredCreateUser, ...safeDto } = dto;
+    const {
+      deptId: ignoredDeptId,
+      createUser: ignoredCreateUser,
+      ...safeDto
+    } = dto;
     void ignoredDeptId;
     void ignoredCreateUser;
     Object.assign(paper, safeDto); // 合并改动，归属字段不接受前端覆盖
@@ -101,7 +139,9 @@ export class PapersService {
       published?: { 'date-parts': number[][] };
       'published-print'?: { 'date-parts': number[][] };
     }
-    interface CrossRefApiResponse { message?: CrossRefMessage }
+    interface CrossRefApiResponse {
+      message?: CrossRefMessage;
+    }
 
     const url = `https://api.crossref.org/works/${encodeURIComponent(doi)}`;
     let json: CrossRefApiResponse;
@@ -110,12 +150,16 @@ export class PapersService {
         headers: { 'User-Agent': 'ResearchMIS/1.0 (mailto:admin@example.com)' },
         signal: AbortSignal.timeout(8000),
       });
-      if (res.status === 404) throw new NotFoundException(`DOI "${doi}" 未找到`);
+      if (res.status === 404)
+        throw new NotFoundException(`DOI "${doi}" 未找到`);
       if (!res.ok) throw new BadRequestException(`CrossRef 返回 ${res.status}`);
       json = (await res.json()) as CrossRefApiResponse;
     } catch (e) {
-      if (e instanceof NotFoundException || e instanceof BadRequestException) throw e;
-      throw new BadRequestException('请求 CrossRef 失败: ' + (e as Error).message);
+      if (e instanceof NotFoundException || e instanceof BadRequestException)
+        throw e;
+      throw new BadRequestException(
+        '请求 CrossRef 失败: ' + (e as Error).message,
+      );
     }
 
     const m = json?.message;

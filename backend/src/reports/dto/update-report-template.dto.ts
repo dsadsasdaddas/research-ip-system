@@ -1,18 +1,23 @@
 import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class UpdateReportTemplateDto {
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   name?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   reportType?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   configJson?: string | null;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   scope?: string;
 
-  @IsOptional() @IsBoolean()
+  @IsOptional()
+  @IsBoolean()
   isActive?: boolean;
 }

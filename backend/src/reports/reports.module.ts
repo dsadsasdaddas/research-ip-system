@@ -7,7 +7,13 @@ import { ReportsService } from './reports.service';
 import { ReportsController } from './reports.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ReportTemplate, ReportExportLog, ScheduledReportTask])],
+  imports: [
+    TypeOrmModule.forFeature([
+      ReportTemplate,
+      ReportExportLog,
+      ScheduledReportTask,
+    ]),
+  ],
   providers: [ReportsService],
   controllers: [ReportsController],
   exports: [ReportsService],

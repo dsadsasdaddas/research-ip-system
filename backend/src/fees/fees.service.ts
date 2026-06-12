@@ -38,14 +38,15 @@ export interface PatentForPlan {
 
 /** 预警等级：根据截止日与今天的天差 */
 function calcAlertLevel(dueDateStr: string | null, payStatus: string): number {
-  if (!dueDateStr || payStatus === 'paid' || payStatus === 'cancelled') return 0;
+  if (!dueDateStr || payStatus === 'paid' || payStatus === 'cancelled')
+    return 0;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const due = new Date(dueDateStr);
   due.setHours(0, 0, 0, 0);
   const diffDays = Math.floor((due.getTime() - today.getTime()) / 86400000);
-  if (diffDays < 0)   return 4;
-  if (diffDays <= 7)  return 3;
+  if (diffDays < 0) return 4;
+  if (diffDays <= 7) return 3;
   if (diffDays <= 15) return 2;
   if (diffDays <= 30) return 1;
   return 0;
@@ -57,9 +58,7 @@ function withAlert(fee: Fee): FeeWithAlert {
 
 @Injectable()
 export class FeesService {
-  constructor(
-    @InjectRepository(Fee) private repo: Repository<Fee>,
-  ) {}
+  constructor(@InjectRepository(Fee) private repo: Repository<Fee>) {}
 
   async create(dto: CreateFeeDto, user: AuthUser): Promise<FeeWithAlert> {
     const { deptId: ignoredDeptId, ...safeDto } = dto;
@@ -76,10 +75,14 @@ export class FeesService {
   async findAll(query: FeeListQuery): Promise<FeeWithAlert[]> {
     const qb = this.repo.createQueryBuilder('f').orderBy('f.due_date', 'ASC');
 
-    if (query.keyword)      qb.andWhere('f.relation_name LIKE :kw', { kw: `%${query.keyword}%` });
-    if (query.relationType) qb.andWhere('f.relation_type = :rt', { rt: query.relationType });
-    if (query.payStatus)    qb.andWhere('f.pay_status = :ps', { ps: query.payStatus });
-    if (query.deptId != null) qb.andWhere('f.dept_id = :did', { did: query.deptId });
+    if (query.keyword)
+      qb.andWhere('f.relation_name LIKE :kw', { kw: `%${query.keyword}%` });
+    if (query.relationType)
+      qb.andWhere('f.relation_type = :rt', { rt: query.relationType });
+    if (query.payStatus)
+      qb.andWhere('f.pay_status = :ps', { ps: query.payStatus });
+    if (query.deptId != null)
+      qb.andWhere('f.dept_id = :did', { did: query.deptId });
 
     const rows = await qb.getMany();
     const withAlerts = rows.map(withAlert);
@@ -110,23 +113,29 @@ export class FeesService {
 
   async alertSummary(user: AuthUser): Promise<AlertSummary> {
     const deptId = getDeptFilter(user);
-    const qb = this.repo.createQueryBuilder('f')
+    const qb = this.repo
+      .createQueryBuilder('f')
       .where("f.pay_status NOT IN ('paid','cancelled')");
     if (deptId != null) qb.andWhere('f.dept_id = :did', { did: deptId });
     const rows = await qb.getMany();
     const counts = [0, 0, 0, 0, 0];
-    rows.forEach((r) => { counts[calcAlertLevel(r.dueDate, r.payStatus)]++; });
+    rows.forEach((r) => {
+      counts[calcAlertLevel(r.dueDate, r.payStatus)]++;
+    });
     return {
-      normal:  counts[0],
-      day30:   counts[1],
-      day15:   counts[2],
-      day7:    counts[3],
+      normal: counts[0],
+      day30: counts[1],
+      day15: counts[2],
+      day7: counts[3],
       overdue: counts[4],
-      total:   counts.reduce((a, b) => a + b, 0),
+      total: counts.reduce((a, b) => a + b, 0),
     };
   }
 
-  async generatePlansFromPatents(patents: PatentForPlan[], user: AuthUser): Promise<{ generated: number }> {
+  async generatePlansFromPatents(
+    patents: PatentForPlan[],
+    user: AuthUser,
+  ): Promise<{ generated: number }> {
     const userDeptId = getDeptFilter(user);
     let created = 0;
     for (const p of patents) {
@@ -134,7 +143,11 @@ export class FeesService {
       // 部门隔离：非全院用户只能为本部门专利生成缴费计划
       if (userDeptId != null && p.deptId !== userDeptId) continue;
       const exists = await this.repo.findOne({
-        where: { relationType: 'patent', relationId: p.id, dueDate: p.nextFeeDate },
+        where: {
+          relationType: 'patent',
+          relationId: p.id,
+          dueDate: p.nextFeeDate,
+        },
       });
       if (exists) continue;
       const fee = this.repo.create({

@@ -6,7 +6,9 @@ import { paginate } from '../common/utils/pagination';
 
 @Injectable()
 export class SearchLogsService {
-  constructor(@InjectRepository(SearchLog) private repo: Repository<SearchLog>) {}
+  constructor(
+    @InjectRepository(SearchLog) private repo: Repository<SearchLog>,
+  ) {}
 
   /** 插入一条搜索日志 */
   async log(entry: {
@@ -37,7 +39,9 @@ export class SearchLogsService {
   /** 分页查询搜索日志（管理员） */
   async findAll(query: { keyword?: string; page?: number; pageSize?: number }) {
     const { keyword, page, pageSize } = query;
-    const qb = this.repo.createQueryBuilder('l').orderBy('l.create_time', 'DESC');
+    const qb = this.repo
+      .createQueryBuilder('l')
+      .orderBy('l.create_time', 'DESC');
 
     if (keyword) {
       qb.andWhere('l.keyword LIKE :kw', { kw: `%${keyword}%` });
